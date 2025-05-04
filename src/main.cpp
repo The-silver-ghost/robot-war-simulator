@@ -21,3 +21,35 @@ Phone:
 Lecture Section: TC3L
 Tutorial Section: T12L
 **********|**********|**********/
+
+#include <iostream>
+#include <vector>
+#include <string>
+#include <fstream>
+using namespace std;
+
+class Robot{
+    private:
+        int robotPosX;
+        int robotPosY;
+    protected:
+        int robotLife = 3;
+        int robotKills;
+        string robotName;
+        char robotSymbol;
+    public:
+        virtual void see(int,int) = 0;
+        virtual void move() = 0;
+        virtual void shoot(int,int) = 0;
+        virtual void think() = 0;  //to be changed in derived classes
+
+        void setPosX(int x){robotPosX=x;}
+        void setPosY(int y){robotPosY=y;}
+        void setRobotName(string n){robotName=n;}
+        void setRobotSymbol(char c){robotSymbol=c;}
+        void setKills(int k){robotKills=k;}
+};
+
+int main(){
+    return 0;
+}

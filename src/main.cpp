@@ -28,28 +28,28 @@ Tutorial Section: T12L
 #include <fstream>
 using namespace std;
 
-class Battlefield{
+class Robot{
+    private:
+        int robotPosX;
+        int robotPosY;
+    protected:
+        int robotLife = 3;
+        int robotKills;
+        string robotName;
+        char robotSymbol;
+    public:
+        virtual void see(int,int) = 0;
+        virtual void move() = 0;
+        virtual void shoot(int,int) = 0;
+        virtual void think() = 0;  //to be changed in derived classes
+
+        void setPosX(int x){robotPosX=x;}
+        void setPosY(int y){robotPosY=y;}
+        void setRobotName(string n){robotName=n;}
+        void setRobotSymbol(char c){robotSymbol=c;}
+        void setKills(int k){robotKills=k;}
 };
 
 int main(){
-    ifstream configFile("config.cfg");
-    string line;
-    int row,col,numberOfSteps,numberOfRobots;
-    while(getline(configFile,line)){
-        if (line.find("M by N") != string::npos){
-            string coordinates = line.substr(line.find(':')+2);
-            row = stoi(coordinates.substr(0,coordinates.find(' ')));
-            col = stoi(coordinates.substr(coordinates.find(' ')+1,-1));
-        }
-        else if (line.find("steps:") != string::npos){
-            numberOfSteps = stoi(line.substr(line.find(':') +2,-1));
-        }
-        else if (line.find("robots") != string::npos){
-            numberOfRobots = stoi(line.substr(line.find(':')+2,-1));
-        }
-        else if (line.find("Generic") != string::npos){
-            cout << line << endl;
-        }
-    }
     return 0;
 }

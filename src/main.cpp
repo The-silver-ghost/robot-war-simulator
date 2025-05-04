@@ -50,6 +50,36 @@ class Robot{
         void setKills(int k){robotKills=k;}
 };
 
+class Battlefield{
+    private:
+        int row,col,steps;
+        vector<char> field;
+    public:
+        Battlefield(int,int,int);
+        int getRow(){return row;}
+        int getCol(){return col;}
+        int getSteps(){return steps;}
+        void displayBattlefield();
+};
+
+Battlefield::Battlefield(int r, int c, int s){
+    row=r;
+    col=c;
+    steps=s;
+}
+
+void Battlefield::displayBattlefield(){
+    for (int i=0;i<row;i++){
+        cout << endl;
+        for (int j=0;j<col;j++){
+            cout << '.';
+        }
+    }
+    cout << endl;
+}
+
 int main(){
+    Battlefield b(3,15,2);
+    b.displayBattlefield();
     return 0;
 }

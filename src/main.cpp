@@ -6,9 +6,9 @@ Name: Sanjeevan A/L Rames
 ID: 243UC245LQ
 Email: sanjeevan.rames@student.mmu.edu.my
 Phone: 019-254 7818
-Name: 
-ID: 
-Email: 
+Name: Hemaraj A/L Rajan
+ID: 243UC247BQ
+Email: hemaraj.rajan@student.mmu.edu.my
 Phone: 
 Name: 
 ID: 
@@ -26,6 +26,8 @@ Tutorial Section: T12L
 #include <vector>
 #include <string>
 #include <fstream>
+#include <cstdlib>
+#include <ctime>
 using namespace std;
 
 class Robot{
@@ -37,11 +39,12 @@ class Robot{
         int robotKills;
         string robotName;
         char robotSymbol;
+        
     public:
-        /*virtual void see(int,int) = 0;
+       // virtual void see(int,int) = 0;
         virtual void move() = 0;
-        virtual void shoot(int,int) = 0;
-        virtual void think() = 0;  //to be changed in derived classes*/ //commented for testing purposes
+        //virtual void shoot(int,int) = 0;
+       // virtual void think() = 0;  // //commented for testing purposes
 
         void setPosX(int x){robotPosX=x;}
         void setPosY(int y){robotPosY=y;}
@@ -96,24 +99,86 @@ void Battlefield::displayBattlefield(){
     cout << endl;
 }
 
-int main(){
-    Battlefield b(10,10,2);
-    Robot r;
-    Robot r2;
-    Robot r3;
-    r.setPosX(9);
-    r.setPosY(1);
-    r.setRobotSymbol('r');
-    r2.setPosX(2);
-    r2.setPosY(5);
-    r2.setRobotSymbol('e');
-    r3.setPosX(6);
-    r3.setPosY(7);
-    r3.setRobotSymbol('d');
+class MovingBot : public Robot{
+    public:
+    int newpos_x;
+    int newpos_y;
+    int dx;
+    int dy;
+    Battlefield * battlefield = nullptr;
 
-    b.addRobot(&r);
-    b.addRobot(&r2);
-    b.addRobot(&r3);
+    void setBattleField(Battlefield * bf){battlefield=bf;} 
+
+    int setdx(){
+       
+       return (rand()%battlefield->getCol())-(battlefield->getCol()/2);
+    }
+    int setdy(){
+        
+        return (rand()%battlefield->getRow())-(battlefield->getRow()/2);
+    }
+
+    void move() override{
+        dx= setdx();
+        dy= setdy();
+        int steps = max(abs(dx), abs(dy)); 
+
+    for(int i=0;i<steps;i++){
+       newpos_x = getPosX() + (dx > 0 ? 1 : (dx < 0 ? -1 : 0)) ;
+       newpos_y = getPosY() + (dy > 0 ? 1 : (dy < 0 ? -1 : 0));
+
+
+       
+       if(newpos_x >=0 && newpos_x<battlefield->getCol() && newpos_y>=0 && newpos_y<battlefield->getRow()){
+
+        setPosX(newpos_x);
+        setPosY(newpos_y); //srand(time(0)) % (max-min+1)
+
+       }
+       battlefield->displayBattlefield();
+
+    }
+}
+
+};
+
+int main(){
+    srand(time(0));
+    Battlefield b(10,10,2);
+    Robot * r = nullptr;
+    Robot  * r2 = nullptr;
+    Robot * r3 = nullptr;
+    r = new MovingBot();
+    r2 = new MovingBot();
+    r3 = new MovingBot();
+    r->setPosX(9);
+    r->setPosY(1);
+    r->setRobotSymbol('r');
+    
+    r2->setPosX(2);
+    r2->setPosY(5);
+    r2->setRobotSymbol('e');
+    r3->setPosX(6);
+    r3->setPosY(7);
+    r3->setRobotSymbol('d');
+
+    static_cast<MovingBot*>(r)->setBattleField(&b);
+    static_cast<MovingBot*>(r2)->setBattleField(&b);
+    static_cast<MovingBot*>(r3)->setBattleField(&b);
+
+    
+
+    b.addRobot(r);
+    b.addRobot(r2);
+    b.addRobot(r3);
     b.displayBattlefield();
+
+    r->move();
+    r2->move();
+    r3->move();
+
+    b.displayBattlefield();
+
+    
     return 0;
 }

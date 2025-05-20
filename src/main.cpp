@@ -67,6 +67,7 @@ class Battlefield{
         int getSteps(){return steps;}
         void displayBattlefield();
         void addRobot(Robot* robot);
+        void beginSimulation();
 };
 
 Battlefield::Battlefield(int r, int c, int s){
@@ -97,6 +98,25 @@ void Battlefield::displayBattlefield(){
         }
     }
     cout << endl;
+}
+
+void Battlefield::beginSimulation(){
+    for (int i = 0; i < steps;){
+        for (auto it = robots.begin(); it != robots.end();){
+            if (i == steps){
+                break;
+            }
+            else{
+                Robot *robot = *it;
+                robot->move();
+                displayBattlefield();
+                cout << "Steps: " << i+1 << endl;
+                cout << robot->getrobotSymbol() << " moved to " << robot->getPosX() << " " << robot->getPosY() << endl;
+                i++;
+                it++;
+            }
+        }
+    }
 }
 
 class MovingBot : public Robot{

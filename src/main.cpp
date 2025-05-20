@@ -72,6 +72,7 @@ class Battlefield{
         int getSteps(){return steps;}
         void displayBattlefield();
         void addRobot(Robot* robot);
+        void beginSimulation();
 };
 
 Battlefield::Battlefield(int r, int c, int s){
@@ -104,6 +105,25 @@ void Battlefield::displayBattlefield(){
     cout << endl;
 }
 
+void Battlefield::beginSimulation(){
+    for (int i = 0; i < steps;){
+        for (auto it = robots.begin(); it != robots.end();){
+            if (i == steps){
+                break;
+            }
+            else{
+                Robot *robot = *it;
+                robot->move();
+                displayBattlefield();
+                cout << "Steps: " << i+1 << endl;
+                cout << robot->getrobotSymbol() << " moved to " << robot->getPosX() << " " << robot->getPosY() << endl;
+                i++;
+                it++;
+            }
+        }
+    }
+}
+
 class MovingBot : public Robot{
     public:
     int newpos_x;
@@ -126,36 +146,28 @@ class MovingBot : public Robot{
     void move() override{
         dx= setdx();
         dy= setdy();
-        int steps = max(abs(dx), abs(dy)); 
+        newpos_x = getPosX() + (dx > 0 ? 1 : (dx < 0 ? -1 : 0));
+        newpos_y = getPosY() + (dy > 0 ? 1 : (dy < 0 ? -1 : 0));
 
-    for(int i=0;i<steps;i++){
-       newpos_x = getPosX() + (dx > 0 ? 1 : (dx < 0 ? -1 : 0)) ;
-       newpos_y = getPosY() + (dy > 0 ? 1 : (dy < 0 ? -1 : 0));
-
-
-       
-       if(newpos_x >=0 && newpos_x<battlefield->getCol() && newpos_y>=0 && newpos_y<battlefield->getRow()){
-
+        if(newpos_x >=0 && newpos_x<battlefield->getCol() && newpos_y>=0 && newpos_y<battlefield->getRow()){
         setPosX(newpos_x);
         setPosY(newpos_y); //srand(time(0)) % (max-min+1)
-
-       }
-       battlefield->displayBattlefield();
-
-    }
+        }
 }
 
 };
 
 int main(){
     srand(time(0));
-    Battlefield b(10,10,2);
+    Battlefield b(20,20,10);
     Robot * r = nullptr;
     Robot  * r2 = nullptr;
     Robot * r3 = nullptr;
+
     r = new MovingBot();
     r2 = new MovingBot();
     r3 = new MovingBot();
+
     r->setPosX(9);
     r->setPosY(1);
     r->setRobotSymbol('r');
@@ -163,6 +175,7 @@ int main(){
     r2->setPosX(2);
     r2->setPosY(5);
     r2->setRobotSymbol('e');
+
     r3->setPosX(6);
     r3->setPosY(7);
     r3->setRobotSymbol('d');
@@ -177,13 +190,16 @@ int main(){
     b.addRobot(r2);
     b.addRobot(r3);
     b.displayBattlefield();
+    cout << "Initial Condition" << endl;
 
-    r->move();
-    r2->move();
-    r3->move();
+    b.beginSimulation();
 
-    b.displayBattlefield();
-
+    delete r;
+    r = nullptr;
+    delete r2;
+    r2 = nullptr;
+    delete r3;
+    r3 = nullptr;
     
     return 0;
 }

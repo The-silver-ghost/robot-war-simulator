@@ -141,23 +141,13 @@ class MovingBot : public Robot{
     void move() override{
         dx= setdx();
         dy= setdy();
-        int steps = max(abs(dx), abs(dy)); 
+        newpos_x = getPosX() + (dx > 0 ? 1 : (dx < 0 ? -1 : 0));
+        newpos_y = getPosY() + (dy > 0 ? 1 : (dy < 0 ? -1 : 0));
 
-    for(int i=0;i<steps;i++){
-       newpos_x = getPosX() + (dx > 0 ? 1 : (dx < 0 ? -1 : 0)) ;
-       newpos_y = getPosY() + (dy > 0 ? 1 : (dy < 0 ? -1 : 0));
-
-
-       
-       if(newpos_x >=0 && newpos_x<battlefield->getCol() && newpos_y>=0 && newpos_y<battlefield->getRow()){
-
+        if(newpos_x >=0 && newpos_x<battlefield->getCol() && newpos_y>=0 && newpos_y<battlefield->getRow()){
         setPosX(newpos_x);
         setPosY(newpos_y); //srand(time(0)) % (max-min+1)
-
-       }
-       battlefield->displayBattlefield();
-
-    }
+        }
 }
 
 };

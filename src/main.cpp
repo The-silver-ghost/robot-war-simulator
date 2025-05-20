@@ -154,13 +154,15 @@ class MovingBot : public Robot{
 
 int main(){
     srand(time(0));
-    Battlefield b(10,10,2);
+    Battlefield b(20,20,10);
     Robot * r = nullptr;
     Robot  * r2 = nullptr;
     Robot * r3 = nullptr;
+
     r = new MovingBot();
     r2 = new MovingBot();
     r3 = new MovingBot();
+
     r->setPosX(9);
     r->setPosY(1);
     r->setRobotSymbol('r');
@@ -168,6 +170,7 @@ int main(){
     r2->setPosX(2);
     r2->setPosY(5);
     r2->setRobotSymbol('e');
+
     r3->setPosX(6);
     r3->setPosY(7);
     r3->setRobotSymbol('d');
@@ -184,11 +187,8 @@ int main(){
     b.displayBattlefield();
     cout << "Initial Condition" << endl;
 
-    r->move();
-    r2->move();
-    r3->move();
+    b.beginSimulation();
 
-    b.displayBattlefield();
     delete r;
     r = nullptr;
     delete r2;

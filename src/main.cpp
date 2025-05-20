@@ -172,13 +172,19 @@ int main(){
     b.addRobot(r2);
     b.addRobot(r3);
     b.displayBattlefield();
+    cout << "Initial Condition" << endl;
 
     r->move();
     r2->move();
     r3->move();
 
     b.displayBattlefield();
-
+    delete r;
+    r = nullptr;
+    delete r2;
+    r2 = nullptr;
+    delete r3;
+    r3 = nullptr;
     
     return 0;
 }

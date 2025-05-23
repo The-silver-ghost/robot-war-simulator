@@ -1,23 +1,28 @@
 /**********|**********|**********|
 Program: YOUR_FILENAME.cpp / YOUR_FILENAME.h
 Course: Object-Oriented Programming and Data Structures
-Trimester: 2410
+Trimester: 2510
+**********|**********|**********|
 Name: Sanjeevan A/L Rames
 ID: 243UC245LQ
 Email: sanjeevan.rames@student.mmu.edu.my
 Phone: 019-254 7818
+**********|**********|**********|
 Name: Hemaraj A/L Rajan
 ID: 243UC247BQ
 Email: hemaraj.rajan@student.mmu.edu.my
 Phone: 
+**********|**********|**********|
+Name: Harvind a/l Sethu Pathy
+ID: 243UC247DM
+Email: harvind.sethu.pathy@student.mmu.edu.my
+Phone: 6019 454 6875
+**********|**********|**********|
 Name: 
 ID: 
 Email: 
 Phone:
-Name: 
-ID: 
-Email: 
-Phone:
+**********|**********|**********|
 Lecture Section: TC3L
 Tutorial Section: T12L
 **********|**********|**********/
@@ -54,6 +59,15 @@ class Robot{
         int getPosX(){return robotPosX;}
         int getPosY(){return robotPosY;}
         char getrobotSymbol(){return robotSymbol;}
+};
+
+class ShootingRobot : virtual public Robot {
+protected:
+    int shells = 10;
+
+public:
+    virtual void shoot(int x, int y) = 0;
+    int getShells() { return shells; }
 };
 
 class Battlefield{
@@ -100,18 +114,49 @@ void Battlefield::displayBattlefield(){
     cout << endl;
 }
 
-void Battlefield::beginSimulation(){
-    for (int i = 0; i < steps;){
-        for (auto it = robots.begin(); it != robots.end();){
-            if (i == steps){
-                break;
+class ShootingBot : public ShootingRobot {
+public:
+    void move() override {
+        cout << robotSymbol << " stays in place." << endl;
+    }
+
+    void shoot(int x, int y) override {
+        if (shells > 0) {
+            cout << robotSymbol << " shoots at (" << x << ", " << y << ")" << endl;
+            shells--;
+            if (shells == 0) {
+                cout << robotSymbol << " is out of ammo and self-destructs!" << endl;
             }
-            else{
-                Robot *robot = *it;
+        } else {
+            cout << robotSymbol << " has no shells left!" << endl;
+        }
+    }
+};
+
+void Battlefield::beginSimulation() {
+    for (int i = 0; i < steps;) {
+        for (auto it = robots.begin(); it != robots.end();) {
+            if (i == steps) {
+                break;
+            } else {
+                Robot* robot = *it;
+
                 robot->move();
+
+                ShootingRobot* shooter = dynamic_cast<ShootingRobot*>(robot);
+                if (shooter && shooter->getShells() > 0) {
+                    int tx = robot->getPosX() + (rand() % 3) - 1;
+                    int ty = robot->getPosY() + (rand() % 3) - 1;
+                    if (tx >= 0 && tx < col && ty >= 0 && ty < row) {
+                        shooter->shoot(tx, ty);
+                    }
+                }
+
                 displayBattlefield();
-                cout << "Steps: " << i+1 << endl;
-                cout << robot->getrobotSymbol() << " moved to " << robot->getPosX() << " " << robot->getPosY() << endl;
+                cout << "Steps: " << i + 1 << endl;
+                cout << robot->getrobotSymbol() << " moved to " 
+                     << robot->getPosX() << " " << robot->getPosY() << endl;
+
                 i++;
                 it++;
             }
@@ -179,7 +224,11 @@ int main(){
     static_cast<MovingBot*>(r2)->setBattleField(&b);
     static_cast<MovingBot*>(r3)->setBattleField(&b);
 
-    
+    Robot* shooter = new ShootingBot();
+    shooter->setPosX(4);
+    shooter->setPosY(4);
+    shooter->setRobotSymbol('s');
+    b.addRobot(shooter);
 
     b.addRobot(r);
     b.addRobot(r2);

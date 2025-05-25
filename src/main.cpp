@@ -46,10 +46,10 @@ class Robot{
         char robotSymbol;
         
     public:
-       // virtual void see(int,int) = 0;
+        virtual void see(int,int) = 0;
         virtual void move() = 0;
-        //virtual void shoot(int,int) = 0;
-       // virtual void think() = 0;  // //commented for testing purposes
+        virtual void shoot(int,int) = 0;
+        virtual void think() = 0;
 
         void setPosX(int x){robotPosX=x;}
         void setPosY(int y){robotPosY=y;}
@@ -68,6 +68,27 @@ protected:
 public:
     virtual void shoot(int x, int y) = 0;
     int getShells() { return shells; }
+};
+
+class MovingRobot : virtual public Robot{
+    public:
+    int newpos_x;
+    int newpos_y;
+    int dx;
+    int dy;
+    Battlefield * battlefield = nullptr;
+    void setBattleField(Battlefield * bf){battlefield=bf;} 
+    virtual void move() = 0;
+};
+
+class SeeingRobot : virtual public Robot{
+    public:
+        virtual void see(int,int) = 0;
+};
+
+class ThinkingRobot : virtual public Robot{
+    public:
+        virtual void think() = 0;
 };
 
 class Battlefield{
@@ -114,25 +135,6 @@ void Battlefield::displayBattlefield(){
     cout << endl;
 }
 
-class ShootingBot : public ShootingRobot {
-public:
-    void move() override {
-        cout << robotSymbol << " stays in place." << endl;
-    }
-
-    void shoot(int x, int y) override {
-        if (shells > 0) {
-            cout << robotSymbol << " shoots at (" << x << ", " << y << ")" << endl;
-            shells--;
-            if (shells == 0) {
-                cout << robotSymbol << " is out of ammo and self-destructs!" << endl;
-            }
-        } else {
-            cout << robotSymbol << " has no shells left!" << endl;
-        }
-    }
-};
-
 void Battlefield::beginSimulation() {
     for (int i = 0; i < steps;) {
         for (auto it = robots.begin(); it != robots.end();) {
@@ -164,86 +166,18 @@ void Battlefield::beginSimulation() {
     }
 }
 
-class MovingBot : public Robot{
+class GenericRobot : public MovingRobot, public SeeingRobot, public ShootingRobot, public ThinkingRobot{
     public:
-    int newpos_x;
-    int newpos_y;
-    int dx;
-    int dy;
-    Battlefield * battlefield = nullptr;
-
-    void setBattleField(Battlefield * bf){battlefield=bf;} 
-
-    int setdx(){
-       
-       return (rand()%battlefield->getCol())-(battlefield->getCol()/2);
-    }
-    int setdy(){
-        
-        return (rand()%battlefield->getRow())-(battlefield->getRow()/2);
-    }
-
-    void move() override{
-        dx= setdx();
-        dy= setdy();
-        newpos_x = getPosX() + (dx > 0 ? 1 : (dx < 0 ? -1 : 0));
-        newpos_y = getPosY() + (dy > 0 ? 1 : (dy < 0 ? -1 : 0));
-
-        if(newpos_x >=0 && newpos_x<battlefield->getCol() && newpos_y>=0 && newpos_y<battlefield->getRow()){
-        setPosX(newpos_x);
-        setPosY(newpos_y); //srand(time(0)) % (max-min+1)
-        }
-}
-
+        void shoot(int x, int y) override{}
+        void think() override{}
+        void move() override{}
+        void see(int x, int y){}
 };
 
 int main(){
     srand(time(0));
     Battlefield b(20,20,10);
-    Robot * r = nullptr;
-    Robot  * r2 = nullptr;
-    Robot * r3 = nullptr;
-
-    r = new MovingBot();
-    r2 = new MovingBot();
-    r3 = new MovingBot();
-
-    r->setPosX(9);
-    r->setPosY(1);
-    r->setRobotSymbol('r');
-    
-    r2->setPosX(2);
-    r2->setPosY(5);
-    r2->setRobotSymbol('e');
-
-    r3->setPosX(6);
-    r3->setPosY(7);
-    r3->setRobotSymbol('d');
-
-    static_cast<MovingBot*>(r)->setBattleField(&b);
-    static_cast<MovingBot*>(r2)->setBattleField(&b);
-    static_cast<MovingBot*>(r3)->setBattleField(&b);
-
-    Robot* shooter = new ShootingBot();
-    shooter->setPosX(4);
-    shooter->setPosY(4);
-    shooter->setRobotSymbol('s');
-    b.addRobot(shooter);
-
-    b.addRobot(r);
-    b.addRobot(r2);
-    b.addRobot(r3);
-    b.displayBattlefield();
-    cout << "Initial Condition" << endl;
-
-    b.beginSimulation();
-
-    delete r;
-    r = nullptr;
-    delete r2;
-    r2 = nullptr;
-    delete r3;
-    r3 = nullptr;
+    Robot *r1 = new GenericRobot;
     
     return 0;
 }

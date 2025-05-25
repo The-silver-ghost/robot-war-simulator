@@ -47,7 +47,7 @@ class Robot{
         
     public:
         virtual void see(int,int) = 0;
-        virtual void move() = 0;
+        virtual void move(int, int) = 0;
         virtual void shoot(int,int) = 0;
         virtual void think() = 0;
 
@@ -112,6 +112,7 @@ void Battlefield::beginSimulation() {
                 break;
             } else {
                 Robot* robot = *it;
+                robot->move(getCol(),getRow());
                 displayBattlefield();
                 i++;
                 it++;
@@ -135,16 +136,14 @@ class MovingRobot : virtual public Robot{
     int newpos_y;
     int dx;
     int dy;
-    Battlefield * battlefield = nullptr;
-    void setBattleField(Battlefield * bf){battlefield=bf;} 
-    virtual void move() = 0;
-    int setdx(){
+    virtual void move(int,int) = 0;
+    int setdx(int col){
        
-       return (rand()%battlefield->getCol())-(battlefield->getCol()/2);
+       return (rand()%col)-(col/2);
     }
-    int setdy(){
+    int setdy(int row){
         
-        return (rand()%battlefield->getRow())-(battlefield->getRow()/2);
+        return (rand()%row)-(row/2);
     }
 };
 
@@ -174,13 +173,13 @@ class GenericRobot : public MovingRobot, public SeeingRobot, public ShootingRobo
             }
         }
         void think() override{}
-        void move() override{
-            dx= setdx();
-            dy= setdy();
+        void move(int col,int row) override{
+            dx= setdx(col);
+            dy= setdy(row);
             newpos_x = getPosX() + (dx > 0 ? 1 : (dx < 0 ? -1 : 0));
             newpos_y = getPosY() + (dy > 0 ? 1 : (dy < 0 ? -1 : 0));
 
-            if(newpos_x >=0 && newpos_x<battlefield->getCol() && newpos_y>=0 && newpos_y<battlefield->getRow()){
+            if(newpos_x >=0 && newpos_x<col && newpos_y>=0 && newpos_y<row){
                 setPosX(newpos_x);
                 setPosY(newpos_y); //srand(time(0)) % (max-min+1)
             }

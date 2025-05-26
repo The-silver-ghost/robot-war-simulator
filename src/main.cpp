@@ -18,10 +18,10 @@ ID: 243UC247DM
 Email: harvind.sethu.pathy@student.mmu.edu.my
 Phone: 6019 454 6875
 **********|**********|**********|
-Name: 
-ID: 
-Email: 
-Phone:
+Name: Isaiah Naden a/l Felix Arokianathan
+ID: 243UC2466L
+Email: isaiah.naden.felix@student.mmu.edu.my
+Phone:010-212 2720
 **********|**********|**********|
 Lecture Section: TC3L
 Tutorial Section: T12L
@@ -73,7 +73,11 @@ class Battlefield{
         void displayBattlefield();
         void addRobot(Robot* robot);
         void beginSimulation();
+        static vector<Robot*> robotsGlobal;
+        
 };
+
+vector<Robot*> Battlefield::robotsGlobal;
 
 Battlefield::Battlefield(int r, int c, int s){
     row=r;
@@ -83,6 +87,7 @@ Battlefield::Battlefield(int r, int c, int s){
 
 void Battlefield::addRobot(Robot* robot){
     robots.push_back(robot);
+    robotsGlobal.push_back(robot);
 }
 
 void Battlefield::displayBattlefield(){
@@ -112,6 +117,7 @@ void Battlefield::beginSimulation() {
                 break;
             } else {
                 Robot* robot = *it;
+                robot->see(0, 0);
                 robot->move(getCol(),getRow());
                 displayBattlefield();
                 i++;
@@ -184,7 +190,34 @@ class GenericRobot : public MovingRobot, public SeeingRobot, public ShootingRobo
                 setPosY(newpos_y); //srand(time(0)) % (max-min+1)
             }
         }
-        void see(int x, int y){}
+        void see(int x, int y) override {
+            int centerX = getPosX() + x;
+            int centerY = getPosY() + y;
+            
+            cout << "Robot " << robotSymbol << " is looking around (" << centerX << ", " << centerY << "):\n";
+            
+            for (int dy = -1; dy <= 1; dy++) {
+                for (int dx = -1; dx <= 1; dx++) {
+                    int nx = centerX + dx;
+                    int ny = centerY + dy;
+        
+                    if (nx >= 0 && nx < 20 && ny >= 0 && ny < 20) { 
+                        bool found = false;
+                        for (Robot* other : Battlefield::robotsGlobal) { 
+                            if (other != this && other->getPosX() == nx && other->getPosY() == ny) {
+                                cout << "  Enemy robot found at (" << nx << ", " << ny << ") with symbol: " << other->getrobotSymbol() << "\n";
+                                found = true;
+                                break;
+                            }
+                        }
+            
+                    } else {
+                        cout << "  (" << nx << ", " << ny << ") is out of battlefield bounds.\n";
+                    }
+                }
+            }
+        }
+        
 };
 
 int main(){

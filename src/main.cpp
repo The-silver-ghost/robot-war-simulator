@@ -74,7 +74,6 @@ class Battlefield{
     private:
         int row,col,steps,numberOfRobots;
     public:
-        Battlefield(int,int,int);
         int getRow(){return row;}
         int getCol(){return col;}
         int getSteps(){return steps;}
@@ -89,12 +88,6 @@ class Battlefield{
 };
 
 vector<Robot*> Battlefield::robotsGlobal;
-
-Battlefield::Battlefield(int r, int c, int s){
-    row=r;
-    col=c;
-    steps=s;
-}
 
 void Battlefield::addRobot(Robot* robot){
     robotsGlobal.push_back(robot);
@@ -373,23 +366,10 @@ void Battlefield::readFile(ifstream &file){
 }
 
 int main(){
+    ifstream infile;
     srand(time(0));
-    Battlefield b(20,20,10);
-    Robot *r1 = new GenericRobot;
-    Robot *r = new GenericRobot;
-    Robot *r2 = new GenericRobot;
-    r->setPosX(14);
-    r->setPosY(4);
-    r->setRobotSymbol('r');
-    r1->setPosX(3);
-    r1->setPosY(3);
-    r1->setRobotSymbol('e');
-    r2->setPosX(1);
-    r2->setPosY(1);
-    r2->setRobotSymbol('d');
-    b.addRobot(r);
-    b.addRobot(r1);
-    b.addRobot(r2);
+    Battlefield b;
+    b.readFile(infile);
     b.beginSimulation();
     
     return 0;

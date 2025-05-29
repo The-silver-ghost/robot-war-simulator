@@ -44,8 +44,10 @@ class Robot{
         int robotKills;
         string robotName;
         char robotSymbol;
+        string robotType;
         
     public:
+        Robot(string,string,int,int);
         virtual void see(int,int,int,int) = 0;
         virtual void move(int, int) = 0;
         virtual void shoot(int,int) = 0;
@@ -62,6 +64,11 @@ class Robot{
         char getrobotSymbol(){return robotSymbol;}
         int getLife(){return robotLife;}
 };
+
+Robot::Robot(string type,string name,int xCoord,int yCoord){
+    robotType = type; robotName = name; robotSymbol = robotName[0];
+    robotPosX = xCoord; robotPosY = yCoord;
+}
 
 class Battlefield{
     private:

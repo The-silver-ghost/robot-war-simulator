@@ -82,6 +82,7 @@ class Battlefield{
         void beginSimulation();
         void removeRobot(Robot* robot);
         void readFile(ifstream &file);
+        ~Battlefield();
 
         static vector<Robot*> robotsGlobal;
         
@@ -91,6 +92,15 @@ vector<Robot*> Battlefield::robotsGlobal;
 
 void Battlefield::addRobot(Robot* robot){
     robotsGlobal.push_back(robot);
+}
+
+Battlefield::~Battlefield(){
+    for (auto it=robotsGlobal.begin();it != robotsGlobal.end();){
+        Robot *robot = *it;
+        robot = nullptr;
+        delete robot;
+        it++;
+    }
 }
 
 void Battlefield::removeRobot(Robot* robot) {

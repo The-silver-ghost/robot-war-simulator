@@ -348,46 +348,166 @@ class GenericRobot : public MovingRobot, public SeeingRobot, public ShootingRobo
         }
 };
 
-void Battlefield::readFile(ifstream &file){
+class LongShotBot : public GenericRobot {
+public:
+    LongShotBot(string type, string name, int x, int y) 
+        : Robot(type, name, x, y), GenericRobot(type, name, x, y) {}
+
+    void shoot(int x, int y) override {
+        lookCounter--;
+        if (shells > 0) {
+            cout << robotSymbol << " shoots at (" << x << ", " << y << ") with long range!" << endl;
+            outfile << robotSymbol << " shoots at (" << x << ", " << y << ") with long range!" << endl;
+            shells--;
+
+            int distance = abs(getPosX() - x) + abs(getPosY() - y);
+            
+            if (distance <= 3) { 
+                if ((rand() % 100) < 70) {
+                    for (Robot* target : Battlefield::robotsGlobal) {
+                        if (target != this && target->getPosX() == x && target->getPosY() == y) {
+                            cout << "Long range hit! " << target->getrobotSymbol() << " was destroyed!" << endl;
+                            outfile << "Long range hit! " << target->getrobotSymbol() << " was destroyed!" << endl;
+                            target->setLife(0);
+                            robotKills++;
+                            break;
+                        }
+                    }
+                } else {
+                    cout << "Long range shot missed the target!" << endl;
+                    outfile << "Long range shot missed the target!" << endl;
+                }
+            } else {
+                cout << "Target out of long range, shot missed!" << endl;
+                outfile << "Target out of long range, shot missed!" << endl;
+            }
+
+            if (shells == 0) {
+                cout << robotSymbol << " is out of ammo and self-destructs!" << endl;
+                outfile << robotSymbol << " is out of ammo and self-destructs!" << endl;
+                robotLife = 0;
+            }
+        } else {
+            cout << robotSymbol << " has no shells left!" << endl;
+            outfile << robotSymbol << " has no shells left!" << endl;
+        }
+    }
+};
+
+class SemiAutoBot : public GenericRobot {
+public:
+    SemiAutoBot(string type, string name, int x, int y) 
+        : Robot(type, name, x, y), GenericRobot(type, name, x, y) {}
+
+    void shoot(int x, int y) override {
+        lookCounter--;
+        if (shells > 0) {
+            cout << robotSymbol << " fires 3-shot burst at (" << x << ", " << y << ")!" << endl;
+            outfile << robotSymbol << " fires 3-shot burst at (" << x << ", " << y << ")!" << endl;
+            shells--;
+
+            int dx = abs(getPosX() - x);
+            int dy = abs(getPosY() - y);
+            
+            if (dx <= 1 && dy <= 1) {
+                bool targetDestroyed = false;
+                for (int i = 0; i < 3; i++) { 
+                    if ((rand() % 100) < 70) {
+                        for (Robot* target : Battlefield::robotsGlobal) {
+                            if (target != this && target->getPosX() == x && target->getPosY() == y) {
+                                if (!targetDestroyed) { 
+                                    cout << "Burst shot hit! " << target->getrobotSymbol() << " was destroyed!" << endl;
+                                    outfile << "Burst shot hit! " << target->getrobotSymbol() << " was destroyed!" << endl;
+                                    target->setLife(0);
+                                    robotKills++;
+                                    targetDestroyed = true;
+                                }
+                                break;
+                            }
+                        }
+                    }
+                }
+                
+                if (!targetDestroyed) {
+                    cout << "All burst shots missed the target!" << endl;
+                    outfile << "All burst shots missed the target!" << endl;
+                }
+            } else {
+                cout << "Target not in adjacent position, burst shots missed!" << endl;
+                outfile << "Target not in adjacent position, burst shots missed!" << endl;
+            }
+
+            if (shells == 0) {
+                cout << robotSymbol << " is out of ammo and self-destructs!" << endl;
+                outfile << robotSymbol << " is out of ammo and self-destructs!" << endl;
+                robotLife = 0;
+            }
+        } else {
+            cout << robotSymbol << " has no shells left!" << endl;
+            outfile << robotSymbol << " has no shells left!" << endl;
+        }
+    }
+};
+
+class ThirtyShotBot : public GenericRobot {
+public:
+    ThirtyShotBot(string type, string name, int x, int y) 
+        : Robot(type, name, x, y), GenericRobot(type, name, x, y) {
+        shells = 30;  
+    }
+};
+
+void Battlefield::readFile(ifstream &file) {
     file.open("config.txt");
     string line;
     vector<string> robotTypeList;
     vector<string> robotNameList;
     vector<string> robotPosXList;
     vector<string> robotPosYList;
-    int tempNumX,tempNumY;
+    int tempNumX, tempNumY;
 
-    if (!file){
+    if (!file) {
         cout << "Fail to open config.txt" << endl;
         outfile << "Fail to open config.txt" << endl;
         return;
     }
-    else{
-        file >> line;file >> line;file >> line;file >> line; //skip M by N :
+    else {
+        file >> line; file >> line; file >> line; file >> line; //skip M by N :
         file >> line; row = stoi(line); file >> line; col = stoi(line); //get row and col
-        file >> line;file >> line;steps = stoi(line); //get steps
-        file >> line;file >> line;numberOfRobots = stoi(line);//get number of robots
-        for (int i=0;i<numberOfRobots;i++){
-            file >> line;robotTypeList.push_back(line);
-            file >> line;robotNameList.push_back(line);
-            file >> line;robotPosXList.push_back(line);
-            file >> line;robotPosYList.push_back(line);
+        file >> line; file >> line; steps = stoi(line); //get steps
+        file >> line; file >> line; numberOfRobots = stoi(line);//get number of robots
+        for (int i = 0; i < numberOfRobots; i++) {
+            file >> line; robotTypeList.push_back(line);
+            file >> line; robotNameList.push_back(line);
+            file >> line; robotPosXList.push_back(line);
+            file >> line; robotPosYList.push_back(line);
         }
-        for (int i=0;i<numberOfRobots;i++){
-            if (robotTypeList[i] == "GenericRobot"){
-                if (robotPosXList[i] == "random"){
-                    tempNumX = rand() % getCol();
-                    if (robotPosYList[i] == "random"){
-                        tempNumY = rand() % getRow();
-                    }
-                    addRobot(new GenericRobot(robotTypeList[i],robotNameList[i],tempNumX,tempNumY));
+        for (int i = 0; i < numberOfRobots; i++) {
+            if (robotPosXList[i] == "random") {
+                tempNumX = rand() % getCol();
+                if (robotPosYList[i] == "random") {
+                    tempNumY = rand() % getRow();
                 }
-                else{
-                    tempNumX = stoi(robotPosXList[i]);
+                else {
                     tempNumY = stoi(robotPosYList[i]);
-                    addRobot(new GenericRobot(robotTypeList[i],robotNameList[i],tempNumX,tempNumY));
                 }
+            }
+            else {
+                tempNumX = stoi(robotPosXList[i]);
+                tempNumY = stoi(robotPosYList[i]);
+            }
 
+            if (robotTypeList[i] == "GenericRobot") {
+                addRobot(new GenericRobot(robotTypeList[i], robotNameList[i], tempNumX, tempNumY));
+            }
+            else if (robotTypeList[i] == "LongShotBot") {
+                addRobot(new LongShotBot(robotTypeList[i], robotNameList[i], tempNumX, tempNumY));
+            }
+            else if (robotTypeList[i] == "SemiAutoBot") {
+                addRobot(new SemiAutoBot(robotTypeList[i], robotNameList[i], tempNumX, tempNumY));
+            }
+            else if (robotTypeList[i] == "ThirtyShotBot") {
+                addRobot(new ThirtyShotBot(robotTypeList[i], robotNameList[i], tempNumX, tempNumY));
             }
         }
     }

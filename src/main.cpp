@@ -56,9 +56,11 @@ class Robot{
         void setRobotName(string n){robotName=n;}
         void setRobotSymbol(char c){robotSymbol=c;}
         void setKills(int k){robotKills=k;}
+        void setLife(int l){robotLife=l;}
         int getPosX(){return robotPosX;}
         int getPosY(){return robotPosY;}
         char getrobotSymbol(){return robotSymbol;}
+        int getLife(){return robotLife;}
 };
 
 class Battlefield{
@@ -73,6 +75,7 @@ class Battlefield{
         void displayBattlefield();
         void addRobot(Robot* robot);
         void beginSimulation();
+        void removeRobot(Robot* robot);
         static vector<Robot*> robotsGlobal;
         
 };
@@ -90,13 +93,30 @@ void Battlefield::addRobot(Robot* robot){
     robotsGlobal.push_back(robot);
 }
 
+void Battlefield::removeRobot(Robot* robot) {
+    for (auto it = robots.begin(); it != robots.end(); ) {
+        if (*it == robot) {
+            it = robots.erase(it);
+        } else {
+            ++it;
+        }
+    }
+    for (auto it = robotsGlobal.begin(); it != robotsGlobal.end(); ) {
+        if (*it == robot) {
+            it = robotsGlobal.erase(it);
+        } else {
+            ++it;
+        }
+    }
+}
+
 void Battlefield::displayBattlefield(){
     for (int i=0;i<row;i++){
         cout << endl;
         for (int j=0;j<col;j++){
             bool robotFound = false;
             for (Robot* activeBots: robots){
-                if (activeBots->getPosX()==j && activeBots->getPosY()==i){
+                if (activeBots->getPosX()==j && activeBots->getPosY()==i && activeBots->getLife() > 0){
                     cout << activeBots->getrobotSymbol();
                     robotFound = true;
                     break;
@@ -121,7 +141,13 @@ void Battlefield::beginSimulation() {
                 robot->move(getCol(),getRow());
                 displayBattlefield();
                 i++;
-                it++;
+                
+                // Check if robot was killed during move/shoot
+                if (robot->getLife() <= 0) {
+                    it = robots.erase(it);
+                } else {
+                    it++;
+                }
             }
         }
     }
@@ -172,58 +198,94 @@ class GenericRobot : public MovingRobot, public SeeingRobot, public ShootingRobo
             if (shells > 0) {
                 cout << robotSymbol << " shoots at (" << x << ", " << y << ")" << endl;
                 shells--;
+                
+                // Check if target is adjacent (within 1 space)
+                int dx = abs(getPosX() - x);
+                int dy = abs(getPosY() - y);
+                if (dx <= 1 && dy <= 1) {
+                    // 70% chance to kill
+                    if ((rand() % 100) < 70) {
+                        for (Robot* target : Battlefield::robotsGlobal) {
+                            if (target != this && target->getPosX() == x && target->getPosY() == y) {
+                                cout << "Direct hit! " << target->getrobotSymbol() << " was destroyed!" << endl;
+                                target->setLife(0);
+                                robotKills++;
+                                break;
+                            }
+                        }
+                    } else {
+                        cout << "Shot missed the target!" << endl;
+                    }
+                } else {
+                    cout << "Target not in adjacent position, shot missed!" << endl;
+                }
+                
                 if (shells == 0) {
                     cout << robotSymbol << " is out of ammo and self-destructs!" << endl;
+                    robotLife = 0;
                 }
             } else {
                 cout << robotSymbol << " has no shells left!" << endl;
             }
         }
+        
         void think() override{}
+        
         void move(int col,int row) override{
-            cout << "Robot" << getrobotSymbol()<<"starting at("<<getPosX()<<","<<getPosY()<<")"<<endl;
-           // if the rbot sees another robot in vision
-              //dx=see();
-              //else:
-                // dx= setdx(col);
+            cout << "Robot" << getrobotSymbol()<<" starting at("<<getPosX()<<","<<getPosY()<<")"<<endl;
+            
             if(enemyFound){
-                dx=(enemyX>getPosX())? 1 :(enemyX<getPosX()) ? -1 : 0;
-                dy= (enemyY>getPosY())? 1 : (enemyY<getPosY()) ? -1 : 0;
-                cout << robotSymbol << "moves towards enemy robot at("<<enemyX<<","<<enemyY<<")"<< endl;
-            }else{
-                dx= setdx(col);
-                dy= setdy(row);
+                // Check if enemy is adjacent
+                int dx = abs(getPosX() - enemyX);
+                int dy = abs(getPosY() - enemyY);
+                if (dx <= 1 && dy <= 1) {
+                    shoot(enemyX, enemyY);
+                    return; // Skip movement after shooting
+                }
+                
+                dx = (enemyX > getPosX()) ? 1 : (enemyX < getPosX()) ? -1 : 0;
+                dy = (enemyY > getPosY()) ? 1 : (enemyY < getPosY()) ? -1 : 0;
+                cout << robotSymbol << " moves towards enemy robot at("<<enemyX<<","<<enemyY<<")"<< endl;
+            } else {
+                dx = setdx(col);
+                dy = setdy(row);
                 cout << "dx=" << dx << ",dy=" << dy << endl;
             }
-            //dx= setdx(col);
-            //dy= setdy(row);
-            //cout << "dx=" << dx << ",dy=" << dy << endl;
+            
             newpos_x = getPosX() + (dx > 0 ? 1 : (dx < 0 ? -1 : 0));
             newpos_y = getPosY() + (dy > 0 ? 1 : (dy < 0 ? -1 : 0));
 
             if(newpos_x >=0 && newpos_x<col && newpos_y>=0 && newpos_y<row){
                 bool occupied = false;
                 for (Robot* other : Battlefield::robotsGlobal) { 
-                            if (other != this && other->getPosX() == newpos_x && other->getPosY() == newpos_y) {
-                                occupied=true;
-                                break;
-                            }
+                    if (other != this && other->getPosX() == newpos_x && other->getPosY() == newpos_y && other->getLife() > 0) {
+                        occupied=true;
+                        // Check if adjacent to shoot
+                        int adj_dx = abs(getPosX() - newpos_x);
+                        int adj_dy = abs(getPosY() - newpos_y);
+                        if (adj_dx <= 1 && adj_dy <= 1) {
+                            shoot(newpos_x, newpos_y);
+                            return;
                         }
+                        break;
+                    }
+                }
                 
                 if(!occupied){
                     setPosX(newpos_x);
-                    setPosY(newpos_y); //srand(time(0)) % (max-min+1)
-                    cout << "Robot" << getrobotSymbol()<<"moved to("<<getPosX()<<","<<getPosY()<<")"<<endl;
+                    setPosY(newpos_y);
+                    cout << "Robot" << getrobotSymbol()<<" moved to("<<getPosX()<<","<<getPosY()<<")"<<endl;
                 }
                 else{
                     cout<< "Robot would not move to already occupied space" << endl;
                 }
             }
         }
+        
         void see(int x, int y) override {
             int centerX = getPosX() + x;
             int centerY = getPosY() + y;
-            enemyFound= false;
+            enemyFound = false;
             
             cout << "Robot " << robotSymbol << " is looking around (" << centerX << ", " << centerY << "):\n";
             
@@ -233,50 +295,43 @@ class GenericRobot : public MovingRobot, public SeeingRobot, public ShootingRobo
                     int ny = centerY + dy;
         
                     if (nx >= 0 && nx < 20 && ny >= 0 && ny < 20) { 
-                        //bool found = false;
                         for (Robot* other : Battlefield::robotsGlobal) { 
-                            if (other != this && other->getPosX() == nx && other->getPosY() == ny) {
-                                enemyX=nx;
-                                enemyY=ny;
+                            if (other != this && other->getPosX() == nx && other->getPosY() == ny && other->getLife() > 0) {
+                                enemyX = nx;
+                                enemyY = ny;
                                 enemyFound = true;
                                 cout << "  Enemy robot found at (" << nx << ", " << ny << ") with symbol: " << other->getrobotSymbol() << "\n";
-                                //found = true;
                                 break;
                             }
                         }
-            
                     } else {
                         cout << "  (" << nx << ", " << ny << ") is out of battlefield bounds.\n";
                     }
                 }
             }
         }
-        
 };
 
 int main(){
     srand(time(0));
-    Battlefield b(20,20,10);
+    Battlefield b(5,5,10);
     Robot *r1 = new GenericRobot;
     Robot *r = new GenericRobot;
     Robot *r2 = new GenericRobot;
-    r->setPosX(5);
-    r->setPosY(5);
+    r->setPosX(4);
+    r->setPosY(4);
     r->setRobotSymbol('r');
-    r1->setPosX(9);
-    r1->setPosY(5);
+    r1->setPosX(3);
+    r1->setPosY(3);
     r1->setRobotSymbol('e');
-    r2->setPosX(15);
-    r2->setPosY(7);
+    r2->setPosX(1);
+    r2->setPosY(1);
     r2->setRobotSymbol('d');
     b.addRobot(r);
     b.addRobot(r1);
     b.addRobot(r2);
     b.beginSimulation();
 
-    r = nullptr;
-    r1 = nullptr;
-    r2 = nullptr;
     delete r;
     delete r1;
     delete r2;

@@ -334,8 +334,8 @@ class GenericRobot : public MovingRobot, public SeeingRobot, public ShootingRobo
                                 enemyX = nx;
                                 enemyY = ny;
                                 enemyFound = true;
-                                cout << "  Enemy robot found at (" << nx << ", " << ny << ") with symbol: " << other->getrobotSymbol() << "\n";
-                                outfile << "  Enemy robot found at (" << nx << ", " << ny << ") with symbol: " << other->getrobotSymbol() << "\n";
+                                cout << "Enemy robot found at (" << nx << ", " << ny << ") with symbol: " << other->getrobotSymbol() << "\n";
+                                outfile << "Enemy robot found at (" << nx << ", " << ny << ") with symbol: " << other->getrobotSymbol() << "\n";
                                 break;
                             }
                         }

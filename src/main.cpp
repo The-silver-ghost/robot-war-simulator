@@ -157,8 +157,6 @@ class ThinkingRobot : virtual public Robot{
         virtual void think() = 0;
 };
 
-
-
 class GenericRobot : public MovingRobot, public SeeingRobot, public ShootingRobot, public ThinkingRobot{
     public:
         void shoot(int x, int y) override{

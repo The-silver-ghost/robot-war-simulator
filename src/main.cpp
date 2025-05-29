@@ -35,6 +35,9 @@ Tutorial Section: T12L
 #include <ctime>
 using namespace std;
 
+//global var
+ofstream outfile;
+
 class Robot{
     private:
         int robotPosX;
@@ -116,21 +119,25 @@ void Battlefield::removeRobot(Robot* robot) {
 void Battlefield::displayBattlefield(){
     for (int i=0;i<row;i++){
         cout << endl;
+        outfile << endl;
         for (int j=0;j<col;j++){
             bool robotFound = false;
             for (Robot* activeBots: robotsGlobal){
                 if (activeBots->getPosX()==j && activeBots->getPosY()==i && activeBots->getLife() > 0){
                     cout << activeBots->getrobotSymbol();
+                    outfile << activeBots->getrobotSymbol();
                     robotFound = true;
                     break;
                 }
             }
             if (!robotFound){
                 cout << '.';
+                outfile << '.';
             }
         }
     }
     cout << endl;
+    outfile << endl;
 }
 
 void Battlefield::beginSimulation() {
@@ -140,8 +147,6 @@ void Battlefield::beginSimulation() {
                 break;
             } else {
                 Robot* robot = *it;
-                // robot->see(0, 0,getCol(),getRow());
-                // robot->move(getCol(),getRow());
                 robot->think(col,row);
                 displayBattlefield();
                 i++;
@@ -200,10 +205,12 @@ class ThinkingRobot : virtual public Robot{
 class GenericRobot : public MovingRobot, public SeeingRobot, public ShootingRobot, public ThinkingRobot{
     public:
         GenericRobot(string type,string name, int x, int y) : Robot(type,name,x,y){}
+
         void shoot(int x, int y) override{
             lookCounter --;
             if (shells > 0) {
                 cout << robotSymbol << " shoots at (" << x << ", " << y << ")" << endl;
+                outfile << robotSymbol << " shoots at (" << x << ", " << y << ")" << endl;
                 shells--;
                 
                 // Check if target is adjacent (within 1 space)
@@ -215,6 +222,7 @@ class GenericRobot : public MovingRobot, public SeeingRobot, public ShootingRobo
                         for (Robot* target : Battlefield::robotsGlobal) {
                             if (target != this && target->getPosX() == x && target->getPosY() == y) {
                                 cout << "Direct hit! " << target->getrobotSymbol() << " was destroyed!" << endl;
+                                outfile << "Direct hit! " << target->getrobotSymbol() << " was destroyed!" << endl;
                                 target->setLife(0);
                                 robotKills++;
                                 break;
@@ -222,17 +230,21 @@ class GenericRobot : public MovingRobot, public SeeingRobot, public ShootingRobo
                         }
                     } else {
                         cout << "Shot missed the target!" << endl;
+                        outfile << "Shot missed the target!" << endl;
                     }
                 } else {
                     cout << "Target not in adjacent position, shot missed!" << endl;
+                    outfile << "Target not in adjacent position, shot missed!" << endl;
                 }
                 
                 if (shells == 0) {
                     cout << robotSymbol << " is out of ammo and self-destructs!" << endl;
+                    outfile << robotSymbol << " is out of ammo and self-destructs!" << endl;
                     robotLife = 0;
                 }
             } else {
                 cout << robotSymbol << " has no shells left!" << endl;
+                outfile << robotSymbol << " has no shells left!" << endl;
             }
         }
         
@@ -258,16 +270,18 @@ class GenericRobot : public MovingRobot, public SeeingRobot, public ShootingRobo
         
         void move(int col,int row) override{
             lookCounter --;
-            cout << "Robot" << getrobotSymbol()<<" starting at("<<getPosX()<<","<<getPosY()<<")"<<endl;
+            cout << "Robot " << getrobotSymbol()<<" starting at ("<<getPosX()<<","<<getPosY()<<")"<<endl;
+            outfile << "Robot " << getrobotSymbol()<<" starting at ("<<getPosX()<<","<<getPosY()<<")"<<endl;
             
             if(enemyFound){
                 dx = (enemyX > getPosX()) ? 1 : (enemyX < getPosX()) ? -1 : 0;
                 dy = (enemyY > getPosY()) ? 1 : (enemyY < getPosY()) ? -1 : 0;
-                cout << robotSymbol << " moves towards enemy robot at("<<enemyX<<","<<enemyY<<")"<< endl;
+                cout << robotSymbol << " moves towards enemy robot at ("<<enemyX<<","<<enemyY<<")"<< endl;
+                outfile << robotSymbol << " moves towards enemy robot at ("<<enemyX<<","<<enemyY<<")"<< endl;
             } else {
                 dx = setdx(col);
                 dy = setdy(row);
-                cout << "dx=" << dx << ",dy=" << dy << endl;
+                // cout << "dx=" << dx << ",dy=" << dy << endl;
             }
             
             newpos_x = getPosX() + (dx > 0 ? 1 : (dx < 0 ? -1 : 0));
@@ -292,10 +306,12 @@ class GenericRobot : public MovingRobot, public SeeingRobot, public ShootingRobo
                 if(!occupied){
                     setPosX(newpos_x);
                     setPosY(newpos_y);
-                    cout << "Robot" << getrobotSymbol()<<" moved to("<<getPosX()<<","<<getPosY()<<")"<<endl;
+                    cout << "Robot " << getrobotSymbol()<<" moved to ("<<getPosX()<<","<<getPosY()<<")"<<endl;
+                    outfile << "Robot " << getrobotSymbol()<<" moved to ("<<getPosX()<<","<<getPosY()<<")"<<endl;
                 }
                 else{
                     cout<< "Robot would not move to already occupied space" << endl;
+                    outfile<< "Robot would not move to already occupied space" << endl;
                 }
             }
         }
@@ -306,6 +322,7 @@ class GenericRobot : public MovingRobot, public SeeingRobot, public ShootingRobo
             enemyFound = false;
             
             cout << "Robot " << robotSymbol << " is looking around (" << centerX << ", " << centerY << "):\n";
+            outfile << "Robot " << robotSymbol << " is looking around (" << centerX << ", " << centerY << "):\n";
             
             for (int dy = -3; dy <= 3; dy++) {
                 for (int dx = -3; dx <= 3; dx++) {
@@ -319,11 +336,13 @@ class GenericRobot : public MovingRobot, public SeeingRobot, public ShootingRobo
                                 enemyY = ny;
                                 enemyFound = true;
                                 cout << "  Enemy robot found at (" << nx << ", " << ny << ") with symbol: " << other->getrobotSymbol() << "\n";
+                                outfile << "  Enemy robot found at (" << nx << ", " << ny << ") with symbol: " << other->getrobotSymbol() << "\n";
                                 break;
                             }
                         }
                     } else {
-                        cout << "  (" << nx << ", " << ny << ") is out of battlefield bounds.\n";
+                        cout << "(" << nx << ", " << ny << ") is out of battlefield bounds.\n";
+                        outfile << "(" << nx << ", " << ny << ") is out of battlefield bounds.\n";
                     }
                 }
             }
@@ -341,7 +360,7 @@ void Battlefield::readFile(ifstream &file){
 
     if (!file){
         cout << "Fail to open config.txt" << endl;
-        // outfile << "Fail to open config.txt" << endl;
+        outfile << "Fail to open config.txt" << endl;
         return;
     }
     else{

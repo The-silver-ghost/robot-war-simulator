@@ -281,7 +281,6 @@ class GenericRobot : public MovingRobot, public SeeingRobot, public ShootingRobo
             } else {
                 dx = setdx(col);
                 dy = setdy(row);
-                // cout << "dx=" << dx << ",dy=" << dy << endl;
             }
             
             newpos_x = getPosX() + (dx > 0 ? 1 : (dx < 0 ? -1 : 0));
@@ -396,6 +395,7 @@ void Battlefield::readFile(ifstream &file){
 
 int main(){
     ifstream infile;
+    outfile.open("file.txt");
     srand(time(0));
     Battlefield b;
     b.readFile(infile);

@@ -73,7 +73,6 @@ Robot::Robot(string type,string name,int xCoord,int yCoord){
 class Battlefield{
     private:
         int row,col,steps;
-        vector<Robot*> robots;
     public:
         Battlefield(int,int,int);
         int getRow(){return row;}
@@ -96,18 +95,10 @@ Battlefield::Battlefield(int r, int c, int s){
 }
 
 void Battlefield::addRobot(Robot* robot){
-    robots.push_back(robot);
     robotsGlobal.push_back(robot);
 }
 
 void Battlefield::removeRobot(Robot* robot) {
-    for (auto it = robots.begin(); it != robots.end(); ) {
-        if (*it == robot) {
-            it = robots.erase(it);
-        } else {
-            ++it;
-        }
-    }
     for (auto it = robotsGlobal.begin(); it != robotsGlobal.end(); ) {
         if (*it == robot) {
             it = robotsGlobal.erase(it);
@@ -122,7 +113,7 @@ void Battlefield::displayBattlefield(){
         cout << endl;
         for (int j=0;j<col;j++){
             bool robotFound = false;
-            for (Robot* activeBots: robots){
+            for (Robot* activeBots: robotsGlobal){
                 if (activeBots->getPosX()==j && activeBots->getPosY()==i && activeBots->getLife() > 0){
                     cout << activeBots->getrobotSymbol();
                     robotFound = true;
@@ -139,7 +130,7 @@ void Battlefield::displayBattlefield(){
 
 void Battlefield::beginSimulation() {
     for (int i = 0; i < steps;) {
-        for (auto it = robots.begin(); it != robots.end();) {
+        for (auto it = robotsGlobal.begin(); it != robotsGlobal.end();) {
             if (i == steps) {
                 break;
             } else {
@@ -152,7 +143,7 @@ void Battlefield::beginSimulation() {
                 
                 // Check if robot was killed during move/shoot
                 if (robot->getLife() <= 0) {
-                    it = robots.erase(it);
+                    it = robotsGlobal.erase(it);
                 } else {
                     it++;
                 }
@@ -203,6 +194,7 @@ class ThinkingRobot : virtual public Robot{
 
 class GenericRobot : public MovingRobot, public SeeingRobot, public ShootingRobot, public ThinkingRobot{
     public:
+        GenericRobot(string type,string name, int x, int y) : Robot(type,name,x,y){}
         void shoot(int x, int y) override{
             lookCounter --;
             if (shells > 0) {

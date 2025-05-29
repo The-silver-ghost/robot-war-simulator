@@ -72,7 +72,7 @@ Robot::Robot(string type,string name,int xCoord,int yCoord){
 
 class Battlefield{
     private:
-        int row,col,steps;
+        int row,col,steps,numberOfRobots;
     public:
         Battlefield(int,int,int);
         int getRow(){return row;}
@@ -82,6 +82,8 @@ class Battlefield{
         void addRobot(Robot* robot);
         void beginSimulation();
         void removeRobot(Robot* robot);
+        void readFile(ifstream &file);
+
         static vector<Robot*> robotsGlobal;
         
 };
@@ -324,6 +326,51 @@ class GenericRobot : public MovingRobot, public SeeingRobot, public ShootingRobo
             }
         }
 };
+
+void Battlefield::readFile(ifstream &file){
+    file.open("config.txt");
+    string line;
+    vector<string> robotTypeList;
+    vector<string> robotNameList;
+    vector<string> robotPosXList;
+    vector<string> robotPosYList;
+    int tempNumX,tempNumY;
+
+    if (!file){
+        cout << "Fail to open config.txt" << endl;
+        // outfile << "Fail to open config.txt" << endl;
+        return;
+    }
+    else{
+        file >> line;file >> line;file >> line;file >> line; //skip M by N :
+        file >> line; row = stoi(line); file >> line; col = stoi(line); //get row and col
+        file >> line;file >> line;steps = stoi(line); //get steps
+        file >> line;file >> line;numberOfRobots = stoi(line);//get number of robots
+        for (int i=0;i<numberOfRobots;i++){
+            file >> line;robotTypeList.push_back(line);
+            file >> line;robotNameList.push_back(line);
+            file >> line;robotPosXList.push_back(line);
+            file >> line;robotPosYList.push_back(line);
+        }
+        for (int i=0;i<numberOfRobots;i++){
+            if (robotTypeList[i] == "GenericRobot"){
+                if (robotPosXList[i] == "random"){
+                    tempNumX = rand() % getCol();
+                    if (robotPosYList[i] == "random"){
+                        tempNumY = rand() % getRow();
+                    }
+                    addRobot(new GenericRobot(robotTypeList[i],robotNameList[i],tempNumX,tempNumY));
+                }
+                else{
+                    tempNumX = stoi(robotPosXList[i]);
+                    tempNumY = stoi(robotPosYList[i]);
+                    addRobot(new GenericRobot(robotTypeList[i],robotNameList[i],tempNumX,tempNumY));
+                }
+
+            }
+        }
+    }
+}
 
 int main(){
     srand(time(0));

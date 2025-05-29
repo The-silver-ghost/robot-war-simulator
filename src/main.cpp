@@ -233,15 +233,15 @@ class GenericRobot : public MovingRobot, public SeeingRobot, public ShootingRobo
         }
         
         void think(int col,int row) override{
-            int dx = abs(getPosX() - col);
-            int dy = abs(getPosY() - row);
+            int x = abs(getPosX() - col);
+            int y = abs(getPosY() - row);
             if (lookCounter == 0){
                 see(0,0,col,row);
                 lookCounter ++;
                 return;
             }
             else{
-                if (dx <= 1 && dy <= 1){
+                if (x <= 1 && y <= 1){
                     shoot(col,row);
                     return;
                 }
@@ -257,14 +257,6 @@ class GenericRobot : public MovingRobot, public SeeingRobot, public ShootingRobo
             cout << "Robot" << getrobotSymbol()<<" starting at("<<getPosX()<<","<<getPosY()<<")"<<endl;
             
             if(enemyFound){
-                // Check if enemy is adjacent
-                int dx = abs(getPosX() - enemyX);
-                int dy = abs(getPosY() - enemyY);
-                if (dx <= 1 && dy <= 1) {
-                    shoot(enemyX, enemyY);
-                    return; // Skip movement after shooting
-                }
-                
                 dx = (enemyX > getPosX()) ? 1 : (enemyX < getPosX()) ? -1 : 0;
                 dy = (enemyY > getPosY()) ? 1 : (enemyY < getPosY()) ? -1 : 0;
                 cout << robotSymbol << " moves towards enemy robot at("<<enemyX<<","<<enemyY<<")"<< endl;

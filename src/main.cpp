@@ -49,7 +49,7 @@ class Robot{
         virtual void see(int,int,int,int) = 0;
         virtual void move(int, int) = 0;
         virtual void shoot(int,int) = 0;
-        virtual void think() = 0;
+        virtual void think(int,int) = 0;
 
         void setPosX(int x){robotPosX=x;}
         void setPosY(int y){robotPosY=y;}
@@ -137,8 +137,9 @@ void Battlefield::beginSimulation() {
                 break;
             } else {
                 Robot* robot = *it;
-                robot->see(0, 0,getCol(),getRow());
-                robot->move(getCol(),getRow());
+                // robot->see(0, 0,getCol(),getRow());
+                // robot->move(getCol(),getRow());
+                robot->think(col,row);
                 displayBattlefield();
                 i++;
                 
@@ -183,18 +184,20 @@ class SeeingRobot : virtual public Robot{
     public:
         int enemyX= -1;
         int enemyY = -1;
+        int lookCounter = 0;
         bool enemyFound= false;
         virtual void see(int,int,int,int) = 0;
 };
 
 class ThinkingRobot : virtual public Robot{
     public:
-        virtual void think() = 0;
+        virtual void think(int,int) = 0;
 };
 
 class GenericRobot : public MovingRobot, public SeeingRobot, public ShootingRobot, public ThinkingRobot{
     public:
         void shoot(int x, int y) override{
+            lookCounter --;
             if (shells > 0) {
                 cout << robotSymbol << " shoots at (" << x << ", " << y << ")" << endl;
                 shells--;
@@ -229,9 +232,28 @@ class GenericRobot : public MovingRobot, public SeeingRobot, public ShootingRobo
             }
         }
         
-        void think() override{}
+        void think(int col,int row) override{
+            int dx = abs(getPosX() - col);
+            int dy = abs(getPosY() - row);
+            if (lookCounter == 0){
+                see(0,0,col,row);
+                lookCounter ++;
+                return;
+            }
+            else{
+                if (dx <= 1 && dy <= 1){
+                    shoot(col,row);
+                    return;
+                }
+                else{
+                    move(col,row);
+                    return;
+                }
+            }
+        }
         
         void move(int col,int row) override{
+            lookCounter --;
             cout << "Robot" << getrobotSymbol()<<" starting at("<<getPosX()<<","<<getPosY()<<")"<<endl;
             
             if(enemyFound){

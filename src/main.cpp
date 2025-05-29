@@ -46,7 +46,7 @@ class Robot{
         char robotSymbol;
         
     public:
-        virtual void see(int,int) = 0;
+        virtual void see(int,int,int,int) = 0;
         virtual void move(int, int) = 0;
         virtual void shoot(int,int) = 0;
         virtual void think() = 0;
@@ -137,7 +137,7 @@ void Battlefield::beginSimulation() {
                 break;
             } else {
                 Robot* robot = *it;
-                robot->see(0, 0);
+                robot->see(0, 0,getCol(),getRow());
                 robot->move(getCol(),getRow());
                 displayBattlefield();
                 i++;
@@ -184,7 +184,7 @@ class SeeingRobot : virtual public Robot{
         int enemyX= -1;
         int enemyY = -1;
         bool enemyFound= false;
-        virtual void see(int,int) = 0;
+        virtual void see(int,int,int,int) = 0;
 };
 
 class ThinkingRobot : virtual public Robot{
@@ -282,7 +282,7 @@ class GenericRobot : public MovingRobot, public SeeingRobot, public ShootingRobo
             }
         }
         
-        void see(int x, int y) override {
+        void see(int x, int y,int col,int row) override {
             int centerX = getPosX() + x;
             int centerY = getPosY() + y;
             enemyFound = false;
@@ -294,7 +294,7 @@ class GenericRobot : public MovingRobot, public SeeingRobot, public ShootingRobo
                     int nx = centerX + dx;
                     int ny = centerY + dy;
         
-                    if (nx >= 0 && nx < 20 && ny >= 0 && ny < 20) { 
+                    if (nx >= 0 && nx < col && ny >= 0 && ny < row) { 
                         for (Robot* other : Battlefield::robotsGlobal) { 
                             if (other != this && other->getPosX() == nx && other->getPosY() == ny && other->getLife() > 0) {
                                 enemyX = nx;
@@ -314,11 +314,11 @@ class GenericRobot : public MovingRobot, public SeeingRobot, public ShootingRobo
 
 int main(){
     srand(time(0));
-    Battlefield b(5,5,10);
+    Battlefield b(20,20,10);
     Robot *r1 = new GenericRobot;
     Robot *r = new GenericRobot;
     Robot *r2 = new GenericRobot;
-    r->setPosX(4);
+    r->setPosX(14);
     r->setPosY(4);
     r->setRobotSymbol('r');
     r1->setPosX(3);
@@ -331,10 +331,6 @@ int main(){
     b.addRobot(r1);
     b.addRobot(r2);
     b.beginSimulation();
-
-    delete r;
-    delete r1;
-    delete r2;
     
     return 0;
 }

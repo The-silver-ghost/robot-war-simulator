@@ -43,25 +43,27 @@ class Robot{
         int robotPosX;
         int robotPosY;
     protected:
-        int robotLife = 3;
         int robotKills;
         string robotName;
         char robotSymbol;
         string robotType;
         
     public:
-        Robot(string,string,int,int);
+        int robotLife = 3;
+        bool isDead = false;
+
         virtual void see(int,int,int,int) = 0;
         virtual void move(int, int) = 0;
         virtual void shoot(int,int) = 0;
         virtual void think(int,int) = 0;
 
+        Robot(string,string,int,int);
         void setPosX(int x){robotPosX=x;}
         void setPosY(int y){robotPosY=y;}
         void setRobotName(string n){robotName=n;}
         void setRobotSymbol(char c){robotSymbol=c;}
         void setKills(int k){robotKills=k;}
-        void setLife(int l){robotLife=l;}
+        void setLife(){isDead = true;}
         int getPosX(){return robotPosX;}
         int getPosY(){return robotPosY;}
         char getrobotSymbol(){return robotSymbol;}
@@ -123,7 +125,7 @@ void Battlefield::displayBattlefield(){
         for (int j=0;j<col;j++){
             bool robotFound = false;
             for (Robot* activeBots: robotsGlobal){
-                if (activeBots->getPosX()==j && activeBots->getPosY()==i && activeBots->getLife() > 0){
+                if (activeBots->getPosX()==j && activeBots->getPosY()==i && activeBots->isDead == false){
                     cout << activeBots->getrobotSymbol();
                     outfile << activeBots->getrobotSymbol();
                     robotFound = true;
@@ -152,7 +154,7 @@ void Battlefield::beginSimulation() {
                 i++;
                 
                 // Check if robot was killed during move/shoot
-                if (robot->getLife() <= 0) {
+                if (robot->isDead == true && robot ->robotLife <= 0) {
                     it = robotsGlobal.erase(it);
                 } else {
                     it++;
@@ -223,7 +225,7 @@ class GenericRobot : public MovingRobot, public SeeingRobot, public ShootingRobo
                             if (target != this && target->getPosX() == x && target->getPosY() == y) {
                                 cout << "Direct hit! " << target->getrobotSymbol() << " was destroyed!" << endl;
                                 outfile << "Direct hit! " << target->getrobotSymbol() << " was destroyed!" << endl;
-                                target->setLife(0);
+                                target->setLife();
                                 robotKills++;
                                 break;
                             }
@@ -240,7 +242,7 @@ class GenericRobot : public MovingRobot, public SeeingRobot, public ShootingRobo
                 if (shells == 0) {
                     cout << robotSymbol << " is out of ammo and self-destructs!" << endl;
                     outfile << robotSymbol << " is out of ammo and self-destructs!" << endl;
-                    robotLife = 0;
+                    isDead = true;
                 }
             } else {
                 cout << robotSymbol << " has no shells left!" << endl;
@@ -289,7 +291,7 @@ class GenericRobot : public MovingRobot, public SeeingRobot, public ShootingRobo
             if(newpos_x >=0 && newpos_x<col && newpos_y>=0 && newpos_y<row){
                 bool occupied = false;
                 for (Robot* other : Battlefield::robotsGlobal) { 
-                    if (other != this && other->getPosX() == newpos_x && other->getPosY() == newpos_y && other->getLife() > 0) {
+                    if (other != this && other->getPosX() == newpos_x && other->getPosY() == newpos_y && other->isDead == false) {
                         occupied=true;
                         // Check if adjacent to shoot
                         int adj_dx = abs(getPosX() - newpos_x);
@@ -323,14 +325,14 @@ class GenericRobot : public MovingRobot, public SeeingRobot, public ShootingRobo
             cout << "Robot " << robotSymbol << " is looking around (" << centerX << ", " << centerY << "):\n";
             outfile << "Robot " << robotSymbol << " is looking around (" << centerX << ", " << centerY << "):\n";
             
-            for (int dy = -3; dy <= 3; dy++) {
-                for (int dx = -3; dx <= 3; dx++) {
+            for (int dy = -1; dy <= 3; dy++) {
+                for (int dx = -1; dx <= 3; dx++) {
                     int nx = centerX + dx;
                     int ny = centerY + dy;
         
                     if (nx >= 0 && nx < col && ny >= 0 && ny < row) { 
                         for (Robot* other : Battlefield::robotsGlobal) { 
-                            if (other != this && other->getPosX() == nx && other->getPosY() == ny && other->getLife() > 0) {
+                            if (other != this && other->getPosX() == nx && other->getPosY() == ny && other->isDead == false) {
                                 enemyX = nx;
                                 enemyY = ny;
                                 enemyFound = true;
@@ -368,7 +370,7 @@ public:
                         if (target != this && target->getPosX() == x && target->getPosY() == y) {
                             cout << "Long range hit! " << target->getrobotSymbol() << " was destroyed!" << endl;
                             outfile << "Long range hit! " << target->getrobotSymbol() << " was destroyed!" << endl;
-                            target->setLife(0);
+                            target->setLife();
                             robotKills++;
                             break;
                         }
@@ -385,7 +387,7 @@ public:
             if (shells == 0) {
                 cout << robotSymbol << " is out of ammo and self-destructs!" << endl;
                 outfile << robotSymbol << " is out of ammo and self-destructs!" << endl;
-                robotLife = 0;
+                isDead = true;
             }
         } else {
             cout << robotSymbol << " has no shells left!" << endl;
@@ -418,7 +420,7 @@ public:
                                 if (!targetDestroyed) { 
                                     cout << "Burst shot hit! " << target->getrobotSymbol() << " was destroyed!" << endl;
                                     outfile << "Burst shot hit! " << target->getrobotSymbol() << " was destroyed!" << endl;
-                                    target->setLife(0);
+                                    target->setLife();
                                     robotKills++;
                                     targetDestroyed = true;
                                 }
@@ -440,7 +442,7 @@ public:
             if (shells == 0) {
                 cout << robotSymbol << " is out of ammo and self-destructs!" << endl;
                 outfile << robotSymbol << " is out of ammo and self-destructs!" << endl;
-                robotLife = 0;
+                isDead = false;
             }
         } else {
             cout << robotSymbol << " has no shells left!" << endl;

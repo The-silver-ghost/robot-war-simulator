@@ -687,7 +687,7 @@ public:
     int dy;
 
     ThirtyShotBot(string type, string name, int x, int y) : Robot(type, name, x, y) {
-        shells = 30; // Special feature - more shells
+        shells = 30; // 30 shells instead of 10
     }
 
     void shoot(int x, int y) override {

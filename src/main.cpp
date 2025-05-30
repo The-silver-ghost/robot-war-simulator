@@ -63,11 +63,10 @@ class Robot{
         void setRobotName(string n){robotName=n;}
         void setRobotSymbol(char c){robotSymbol=c;}
         void setKills(int k){robotKills=k;}
-        void setLife(){isDead = true;}
+        void setLife(){isDead = true;robotLife --;}
         int getPosX(){return robotPosX;}
         int getPosY(){return robotPosY;}
         char getrobotSymbol(){return robotSymbol;}
-        int getLife(){return robotLife;}
 };
 
 Robot::Robot(string type,string name,int xCoord,int yCoord){
@@ -90,10 +89,12 @@ class Battlefield{
         ~Battlefield();
 
         static vector<Robot*> robotsGlobal;
+        static vector<Robot*> robotsQueueGlobal;
         
 };
 
 vector<Robot*> Battlefield::robotsGlobal;
+vector<Robot*> Battlefield::robotsQueueGlobal;
 
 void Battlefield::addRobot(Robot* robot){
     robotsGlobal.push_back(robot);
@@ -101,6 +102,12 @@ void Battlefield::addRobot(Robot* robot){
 
 Battlefield::~Battlefield(){
     for (auto it=robotsGlobal.begin();it != robotsGlobal.end();){
+        Robot *robot = *it;
+        robot = nullptr;
+        delete robot;
+        it++;
+    }
+    for (auto it=robotsQueueGlobal.begin();it != robotsQueueGlobal.end();){
         Robot *robot = *it;
         robot = nullptr;
         delete robot;
@@ -144,22 +151,48 @@ void Battlefield::displayBattlefield(){
 
 void Battlefield::beginSimulation() {
     for (int i = 0; i < steps;) {
-        for (auto it = robotsGlobal.begin(); it != robotsGlobal.end();) {
-            if (i == steps) {
-                break;
-            } else {
-                Robot* robot = *it;
-                robot->think(col,row);
-                displayBattlefield();
-                i++;
-                
-                // Check if robot was killed during move/shoot
-                if (robot->isDead == true && robot ->robotLife <= 0) {
-                    it = robotsGlobal.erase(it);
+        for (auto it = robotsGlobal.begin(); it != robotsGlobal.end();){
+            Robot* robot = *it;
+            if (robotsGlobal.size() == 1){
+                cout << "One Robot remains" << endl;
+                outfile << "One Robot remains" << endl;
+                return;
+            }
+            if (robot->isDead == false){
+                if (i == steps) {
+                    cout << "Max Steps Reached" << endl;
+                    outfile << "Max Steps Reached" << endl;
+                    return;
                 } else {
-                    it++;
+                    robot->think(col,row);
                 }
             }
+            else {
+                robotsQueueGlobal.push_back(robot);
+                it = robotsGlobal.erase(it);
+            }
+            if (!robotsQueueGlobal.empty()){
+            Robot *respawnBot = robotsQueueGlobal.front();
+            robotsQueueGlobal.erase(robotsQueueGlobal.begin());
+            if (respawnBot->robotLife > 0){
+                int x = rand() % getCol();
+                int y = rand() % getRow();
+                respawnBot->setPosX(x);respawnBot->setPosY(y);
+                respawnBot->isDead = false;
+                robotsGlobal.push_back(respawnBot);
+                cout << respawnBot->getrobotSymbol() << " has rejoined the fray at (" << respawnBot->getPosX() << "," << respawnBot->getPosY() << ")" << endl;
+                outfile << respawnBot->getrobotSymbol() << " has rejoined the fray at (" << respawnBot->getPosX() << "," << respawnBot->getPosY() << ")" << endl;
+            }
+            else{
+                cout << respawnBot->getrobotSymbol() << " has been permanently damaged." << endl;
+                outfile << respawnBot->getrobotSymbol() << " has been permanently damaged." << endl;
+                respawnBot = nullptr;
+                // delete respawnBot;
+                }
+            }
+            displayBattlefield();
+            i++;
+            it++;
         }
     }
 }
@@ -242,7 +275,7 @@ class GenericRobot : public MovingRobot, public SeeingRobot, public ShootingRobo
                 if (shells == 0) {
                     cout << robotSymbol << " is out of ammo and self-destructs!" << endl;
                     outfile << robotSymbol << " is out of ammo and self-destructs!" << endl;
-                    isDead = true;
+                    setLife();
                 }
             } else {
                 cout << robotSymbol << " has no shells left!" << endl;
@@ -325,8 +358,8 @@ class GenericRobot : public MovingRobot, public SeeingRobot, public ShootingRobo
             cout << "Robot " << robotSymbol << " is looking around (" << centerX << ", " << centerY << "):\n";
             outfile << "Robot " << robotSymbol << " is looking around (" << centerX << ", " << centerY << "):\n";
             
-            for (int dy = -1; dy <= 3; dy++) {
-                for (int dx = -1; dx <= 3; dx++) {
+            for (int dy = -3; dy <= 3; dy++) {
+                for (int dx = -3; dx <= 3; dx++) {
                     int nx = centerX + dx;
                     int ny = centerY + dy;
         
@@ -387,7 +420,7 @@ public:
             if (shells == 0) {
                 cout << robotSymbol << " is out of ammo and self-destructs!" << endl;
                 outfile << robotSymbol << " is out of ammo and self-destructs!" << endl;
-                isDead = true;
+                setLife();
             }
         } else {
             cout << robotSymbol << " has no shells left!" << endl;
@@ -442,7 +475,7 @@ public:
             if (shells == 0) {
                 cout << robotSymbol << " is out of ammo and self-destructs!" << endl;
                 outfile << robotSymbol << " is out of ammo and self-destructs!" << endl;
-                isDead = false;
+                setLife();
             }
         } else {
             cout << robotSymbol << " has no shells left!" << endl;

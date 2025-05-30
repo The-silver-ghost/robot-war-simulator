@@ -459,7 +459,7 @@ public:
         if(newpos_x >= 0 && newpos_x < col && newpos_y >= 0 && newpos_y < row) {
             bool occupied = false;
             for (Robot* other : Battlefield::robotsGlobal) { 
-                if (other != this && other->getPosX() == newpos_x && other->getPosY() == newpos_y && other->getLife() > 0) {
+                if (other != this && other->getPosX() == newpos_x && other->getPosY() == newpos_y && other->isDead == true) {
                     occupied = true;
                     int adj_dx = abs(getPosX() - newpos_x);
                     int adj_dy = abs(getPosY() - newpos_y);
@@ -498,7 +498,7 @@ public:
     
                 if (nx >= 0 && nx < col && ny >= 0 && ny < row) { 
                     for (Robot* other : Battlefield::robotsGlobal) { 
-                        if (other != this && other->getPosX() == nx && other->getPosY() == ny && other->getLife() > 0) {
+                        if (other != this && other->getPosX() == nx && other->getPosY() == ny && other->isDead == true) {
                             enemyX = nx;
                             enemyY = ny;
                             enemyFound = true;
@@ -627,7 +627,7 @@ public:
         if(newpos_x >= 0 && newpos_x < col && newpos_y >= 0 && newpos_y < row) {
             bool occupied = false;
             for (Robot* other : Battlefield::robotsGlobal) { 
-                if (other != this && other->getPosX() == newpos_x && other->getPosY() == newpos_y && other->getLife() > 0) {
+                if (other != this && other->getPosX() == newpos_x && other->getPosY() == newpos_y && other->isDead == true) {
                     occupied = true;
                     int adj_dx = abs(getPosX() - newpos_x);
                     int adj_dy = abs(getPosY() - newpos_y);
@@ -666,7 +666,7 @@ public:
     
                 if (nx >= 0 && nx < col && ny >= 0 && ny < row) { 
                     for (Robot* other : Battlefield::robotsGlobal) { 
-                        if (other != this && other->getPosX() == nx && other->getPosY() == ny && other->getLife() > 0) {
+                        if (other != this && other->getPosX() == nx && other->getPosY() == ny && other->isDead == true) {
                             enemyX = nx;
                             enemyY = ny;
                             enemyFound = true;
@@ -740,7 +740,7 @@ public:
                         if (target != this && target->getPosX() == x && target->getPosY() == y) {
                             cout << "Direct hit! " << target->getrobotSymbol() << " was destroyed!" << endl;
                             outfile << "Direct hit! " << target->getrobotSymbol() << " was destroyed!" << endl;
-                            target->setLife(0);
+                            target->setLife();
                             robotKills++;
                             break;
                         }
@@ -786,7 +786,7 @@ public:
         if(newpos_x >= 0 && newpos_x < col && newpos_y >= 0 && newpos_y < row) {
             bool occupied = false;
             for (Robot* other : Battlefield::robotsGlobal) { 
-                if (other != this && other->getPosX() == newpos_x && other->getPosY() == newpos_y && other->getLife() > 0) {
+                if (other != this && other->getPosX() == newpos_x && other->getPosY() == newpos_y && other->isDead == true) {
                     occupied = true;
                     int adj_dx = abs(getPosX() - newpos_x);
                     int adj_dy = abs(getPosY() - newpos_y);
@@ -825,7 +825,7 @@ public:
     
                 if (nx >= 0 && nx < col && ny >= 0 && ny < row) { 
                     for (Robot* other : Battlefield::robotsGlobal) { 
-                        if (other != this && other->getPosX() == nx && other->getPosY() == ny && other->getLife() > 0) {
+                        if (other != this && other->getPosX() == nx && other->getPosY() == ny && other->isDead == true) {
                             enemyX = nx;
                             enemyY = ny;
                             enemyFound = true;

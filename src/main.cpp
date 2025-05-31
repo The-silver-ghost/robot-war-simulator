@@ -869,6 +869,180 @@ public:
     }
 };
 
+class StealBot : public MovingRobot, public SeeingRobot, public ShootingRobot, public ThinkingRobot {
+public:
+    int enemyX = -1;
+    int enemyY = -1;
+    int lookCounter = 0;
+    bool enemyFound = false;
+    int newpos_x;
+    int newpos_y;
+    int dx;
+    int dy;
+    const int maxShells = 30;  // Maximum ammo capacity
+
+    StealBot(string type, string name, int x, int y) : Robot(type, name, x, y) {
+        shells = 10;
+    }
+
+    void shoot(int x, int y) override {
+        lookCounter--;
+        if (shells > 0) {
+            cout << robotSymbol << " shoots at (" << x << ", " << y << ")" << endl;
+            outfile << robotSymbol << " shoots at (" << x << ", " << y << ")" << endl;
+            shells--;
+            
+            int dx = abs(getPosX() - x);
+            int dy = abs(getPosY() - y);
+            if (dx <= 1 && dy <= 1) {
+                if ((rand() % 100) < 70) {
+                    for (Robot* target : Battlefield::robotsGlobal) {
+                        if (target != this && target->getPosX() == x && target->getPosY() == y) {
+                            cout << "Direct hit! " << target->getrobotSymbol() << " was destroyed!" << endl;
+                            outfile << "Direct hit! " << target->getrobotSymbol() << " was destroyed!" << endl;
+                            
+                            // Ammo stealing logic
+                            if (ShootingRobot* shootingTarget = dynamic_cast<ShootingRobot*>(target)) {
+                                int stolenAmmo = shootingTarget->getShells();
+                                if (stolenAmmo > 0) {
+                                    shells += stolenAmmo;
+                                    if (shells > maxShells) shells = maxShells;  // Cap at max capacity
+                                    cout << robotSymbol << " stole " << stolenAmmo << " shells from " 
+                                         << target->getrobotSymbol() << "! Now has " << shells << " shells." << endl;
+                                    outfile << robotSymbol << " stole " << stolenAmmo << " shells from " 
+                                            << target->getrobotSymbol() << "! Now has " << shells << " shells." << endl;
+                                }
+                            }
+                            
+                            target->setLife();
+                            robotKills++;
+                            break;
+                        }
+                    }
+                } else {
+                    cout << "Shot missed the target!" << endl;
+                    outfile << "Shot missed the target!" << endl;
+                }
+            } else {
+                cout << "Target not in adjacent position, shot missed!" << endl;
+                outfile << "Target not in adjacent position, shot missed!" << endl;
+            }
+            
+            if (shells == 0) {
+                cout << robotSymbol << " is out of ammo and self-destructs!" << endl;
+                outfile << robotSymbol << " is out of ammo and self-destructs!" << endl;
+                robotLife = 0;
+            }
+        } else {
+            cout << robotSymbol << " has no shells left!" << endl;
+            outfile << robotSymbol << " has no shells left!" << endl;
+        }
+    }
+
+    void move(int col, int row) override {
+        lookCounter--;
+        cout << "Robot " << getrobotSymbol() << " starting at (" << getPosX() << "," << getPosY() << ")" << endl;
+        outfile << "Robot " << getrobotSymbol() << " starting at (" << getPosX() << "," << getPosY() << ")" << endl;
+        
+        if(enemyFound) {
+            dx = (enemyX > getPosX()) ? 1 : (enemyX < getPosX()) ? -1 : 0;
+            dy = (enemyY > getPosY()) ? 1 : (enemyY < getPosY()) ? -1 : 0;
+            cout << robotSymbol << " moves towards enemy robot at (" << enemyX << "," << enemyY << ")" << endl;
+            outfile << robotSymbol << " moves towards enemy robot at (" << enemyX << "," << enemyY << ")" << endl;
+        } else {
+            dx = setdx(col);
+            dy = setdy(row);
+        }
+        
+        newpos_x = getPosX() + (dx > 0 ? 1 : (dx < 0 ? -1 : 0));
+        newpos_y = getPosY() + (dy > 0 ? 1 : (dy < 0 ? -1 : 0));
+
+        if(newpos_x >= 0 && newpos_x < col && newpos_y >= 0 && newpos_y < row) {
+            bool occupied = false;
+            for (Robot* other : Battlefield::robotsGlobal) { 
+                if (other != this && other->getPosX() == newpos_x && other->getPosY() == newpos_y && other->isDead == false) {
+                    occupied = true;
+                    int adj_dx = abs(getPosX() - newpos_x);
+                    int adj_dy = abs(getPosY() - newpos_y);
+                    if (adj_dx <= 1 && adj_dy <= 1) {
+                        shoot(newpos_x, newpos_y);
+                        return;
+                    }
+                    break;
+                }
+            }
+            
+            if(!occupied) {
+                setPosX(newpos_x);
+                setPosY(newpos_y);
+                cout << "Robot " << getrobotSymbol() << " moved to (" << getPosX() << "," << getPosY() << ")" << endl;
+                outfile << "Robot " << getrobotSymbol() << " moved to (" << getPosX() << "," << getPosY() << ")" << endl;
+            } else {
+                cout << "Robot would not move to already occupied space" << endl;
+                outfile << "Robot would not move to already occupied space" << endl;
+            }
+        }
+    }
+
+    void see(int x, int y, int col, int row) override {
+        int centerX = getPosX() + x;
+        int centerY = getPosY() + y;
+        enemyFound = false;
+        
+        cout << "Robot " << robotSymbol << " is looking around (" << centerX << ", " << centerY << "):\n";
+        outfile << "Robot " << robotSymbol << " is looking around (" << centerX << ", " << centerY << "):\n";
+        
+        for (int dy = -3; dy <= 3; dy++) {
+            for (int dx = -3; dx <= 3; dx++) {
+                int nx = centerX + dx;
+                int ny = centerY + dy;
+    
+                if (nx >= 0 && nx < col && ny >= 0 && ny < row) { 
+                    for (Robot* other : Battlefield::robotsGlobal) { 
+                        if (other != this && other->getPosX() == nx && other->getPosY() == ny && other->isDead == false) {
+                            enemyX = nx;
+                            enemyY = ny;
+                            enemyFound = true;
+                            cout << "Enemy robot found at (" << nx << ", " << ny << ") with symbol: " << other->getrobotSymbol() << "\n";
+                            outfile << "Enemy robot found at (" << nx << ", " << ny << ") with symbol: " << other->getrobotSymbol() << "\n";
+                            break;
+                        }
+                    }
+                } else {
+                    cout << "(" << nx << ", " << ny << ") is out of battlefield bounds.\n";
+                    outfile << "(" << nx << ", " << ny << ") is out of battlefield bounds.\n";
+                }
+            }
+        }
+    }
+
+    void think(int col, int row) override {
+        int x = abs(getPosX() - col);
+        int y = abs(getPosY() - row);
+        if (lookCounter == 0) {
+            see(0, 0, col, row);
+            lookCounter++;
+            return;
+        } else {
+            if (x <= 1 && y <= 1) {
+                shoot(col, row);
+                return;
+            } else {
+                move(col, row);
+                return;
+            }
+        }
+    }
+
+    int setdx(int col) {
+        return (rand() % col) - (col / 2);
+    }
+
+    int setdy(int row) {
+        return (rand() % row) - (row / 2);
+    }
+};
+
 void Battlefield::readFile(ifstream &file) {
     file.open("config.txt");
     string line;
@@ -920,6 +1094,9 @@ void Battlefield::readFile(ifstream &file) {
             }
             else if (robotTypeList[i] == "ThirtyShotBot") {
                 addRobot(new ThirtyShotBot(robotTypeList[i], robotNameList[i], tempNumX, tempNumY));
+            }
+            else if (robotTypeList[i] == "StealBot") {
+                addRobot(new StealBot(robotTypeList[i], robotNameList[i], tempNumX, tempNumY));
             }
         }
     }

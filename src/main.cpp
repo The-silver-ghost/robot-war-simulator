@@ -1498,6 +1498,15 @@ private:
     int droneUses = 2; // only 2 scans per match
 
 public:
+    int enemyX = -1;
+    int enemyY = -1;
+    int lookCounter = 0;
+    bool enemyFound = false;
+    int newpos_x;
+    int newpos_y;
+    int dx;
+    int dy;
+    
     DroneBot(string type, string name, int x, int y) : Robot(type, name, x, y) {
         shells = 10;
     }

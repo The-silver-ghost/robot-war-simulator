@@ -358,8 +358,8 @@ class GenericRobot : public MovingRobot, public SeeingRobot, public ShootingRobo
             cout << "Robot " << robotSymbol << " is looking around (" << centerX << ", " << centerY << "):\n";
             outfile << "Robot " << robotSymbol << " is looking around (" << centerX << ", " << centerY << "):\n";
             
-            for (int dy = -3; dy <= 3; dy++) {
-                for (int dx = -3; dx <= 3; dx++) {
+            for (int dy = -1; dy <= 1; dy++) {
+                for (int dx = -1; dx <= 1; dx++) {
                     int nx = centerX + dx;
                     int ny = centerY + dy;
         
@@ -491,8 +491,8 @@ public:
         cout << "Robot " << robotSymbol << " is looking around (" << centerX << ", " << centerY << "):\n";
         outfile << "Robot " << robotSymbol << " is looking around (" << centerX << ", " << centerY << "):\n";
         
-        for (int dy = -3; dy <= 3; dy++) {
-            for (int dx = -3; dx <= 3; dx++) {
+        for (int dy = -1; dy <= 1; dy++) {
+            for (int dx = -1; dx <= 1; dx++) {
                 int nx = centerX + dx;
                 int ny = centerY + dy;
     
@@ -1043,6 +1043,613 @@ public:
     }
 };
 
+class ScoutBot : public MovingRobot, public SeeingRobot, public ShootingRobot, public ThinkingRobot {
+public:
+    int enemyX = -1;
+    int enemyY = -1;
+    int lookCounter = 0;
+    bool enemyFound = false;
+    int newpos_x;
+    int newpos_y;
+    int dx;
+    int dy;
+    int scoutUses = 3;  // Can use scout ability 3 times
+
+    ScoutBot(string type, string name, int x, int y) : Robot(type, name, x, y) {
+        shells = 10;
+    }
+
+    void shoot(int x, int y) override {
+        lookCounter--;
+        if (shells > 0) {
+            cout << robotSymbol << " shoots at (" << x << ", " << y << ")" << endl;
+            outfile << robotSymbol << " shoots at (" << x << ", " << y << ")" << endl;
+            shells--;
+            
+            int dx = abs(getPosX() - x);
+            int dy = abs(getPosY() - y);
+            if (dx <= 1 && dy <= 1) {
+                if ((rand() % 100) < 70) {
+                    for (Robot* target : Battlefield::robotsGlobal) {
+                        if (target != this && target->getPosX() == x && target->getPosY() == y) {
+                            cout << "Direct hit! " << target->getrobotSymbol() << " was destroyed!" << endl;
+                            outfile << "Direct hit! " << target->getrobotSymbol() << " was destroyed!" << endl;
+                            target->setLife();
+                            robotKills++;
+                            break;
+                        }
+                    }
+                } else {
+                    cout << "Shot missed the target!" << endl;
+                    outfile << "Shot missed the target!" << endl;
+                }
+            } else {
+                cout << "Target not in adjacent position, shot missed!" << endl;
+                outfile << "Target not in adjacent position, shot missed!" << endl;
+            }
+            
+            if (shells == 0) {
+                cout << robotSymbol << " is out of ammo and self-destructs!" << endl;
+                outfile << robotSymbol << " is out of ammo and self-destructs!" << endl;
+                setLife();
+            }
+        } else {
+            cout << robotSymbol << " has no shells left!" << endl;
+            outfile << robotSymbol << " has no shells left!" << endl;
+        }
+    }
+
+    void move(int col, int row) override {
+        lookCounter--;
+        cout << "Robot " << getrobotSymbol() << " starting at (" << getPosX() << "," << getPosY() << ")" << endl;
+        outfile << "Robot " << getrobotSymbol() << " starting at (" << getPosX() << "," << getPosY() << ")" << endl;
+        
+        if(enemyFound) {
+            dx = (enemyX > getPosX()) ? 1 : (enemyX < getPosX()) ? -1 : 0;
+            dy = (enemyY > getPosY()) ? 1 : (enemyY < getPosY()) ? -1 : 0;
+            cout << robotSymbol << " moves towards enemy robot at (" << enemyX << "," << enemyY << ")" << endl;
+            outfile << robotSymbol << " moves towards enemy robot at (" << enemyX << "," << enemyY << ")" << endl;
+        } else {
+            dx = setdx(col);
+            dy = setdy(row);
+        }
+        
+        newpos_x = getPosX() + (dx > 0 ? 1 : (dx < 0 ? -1 : 0));
+        newpos_y = getPosY() + (dy > 0 ? 1 : (dy < 0 ? -1 : 0));
+
+        if(newpos_x >= 0 && newpos_x < col && newpos_y >= 0 && newpos_y < row) {
+            bool occupied = false;
+            for (Robot* other : Battlefield::robotsGlobal) { 
+                if (other != this && other->getPosX() == newpos_x && other->getPosY() == newpos_y && other->isDead == false) {
+                    occupied = true;
+                    int adj_dx = abs(getPosX() - newpos_x);
+                    int adj_dy = abs(getPosY() - newpos_y);
+                    if (adj_dx <= 1 && adj_dy <= 1) {
+                        shoot(newpos_x, newpos_y);
+                        return;
+                    }
+                    break;
+                }
+            }
+            
+            if(!occupied) {
+                setPosX(newpos_x);
+                setPosY(newpos_y);
+                cout << "Robot " << getrobotSymbol() << " moved to (" << getPosX() << "," << getPosY() << ")" << endl;
+                outfile << "Robot " << getrobotSymbol() << " moved to (" << getPosX() << "," << getPosY() << ")" << endl;
+            } else {
+                cout << "Robot would not move to already occupied space" << endl;
+                outfile << "Robot would not move to already occupied space" << endl;
+            }
+        }
+    }
+
+    void see(int x, int y, int col, int row) override {
+        // Check if we should use scout ability
+        if (scoutUses > 0 && (x != 0 || y != 0)) {
+            cout << robotSymbol << " is activating Scout ability to view entire battlefield!" << endl;
+            outfile << robotSymbol << " is activating Scout ability to view entire battlefield!" << endl;
+            scoutUses--;
+            
+            enemyFound = false;
+            cout << "Robot " << robotSymbol << " can see the entire battlefield:\n";
+            outfile << "Robot " << robotSymbol << " can see the entire battlefield:\n";
+            
+            // Scan the entire battlefield
+            for (int ny = 0; ny < row; ny++) {
+                for (int nx = 0; nx < col; nx++) {
+                    if (nx == getPosX() && ny == getPosY()) continue; // Skip self
+                    
+                    for (Robot* other : Battlefield::robotsGlobal) { 
+                        if (other != this && other->getPosX() == nx && other->getPosY() == ny && other->isDead == false) {
+                            if (!enemyFound) {
+                                enemyX = nx;
+                                enemyY = ny;
+                                enemyFound = true;
+                            }
+                            cout << "Enemy robot found at (" << nx << ", " << ny << ") with symbol: " << other->getrobotSymbol() << "\n";
+                            outfile << "Enemy robot found at (" << nx << ", " << ny << ") with symbol: " << other->getrobotSymbol() << "\n";
+                            break;
+                        }
+                    }
+                }
+            }
+            
+            if (!enemyFound) {
+                cout << "No enemy robots found on battlefield." << endl;
+                outfile << "No enemy robots found on battlefield." << endl;
+            }
+            return;
+        }
+        
+        // Normal see functionality when not using scout ability
+        int centerX = getPosX() + x;
+        int centerY = getPosY() + y;
+        enemyFound = false;
+        
+        cout << "Robot " << robotSymbol << " is looking around (" << centerX << ", " << centerY << "):\n";
+        outfile << "Robot " << robotSymbol << " is looking around (" << centerX << ", " << centerY << "):\n";
+        
+        for (int dy = -1; dy <= 1; dy++) {
+            for (int dx = -1; dx <= 1; dx++) {
+                int nx = centerX + dx;
+                int ny = centerY + dy;
+    
+                if (nx >= 0 && nx < col && ny >= 0 && ny < row) { 
+                    for (Robot* other : Battlefield::robotsGlobal) { 
+                        if (other != this && other->getPosX() == nx && other->getPosY() == ny && other->isDead == false) {
+                            enemyX = nx;
+                            enemyY = ny;
+                            enemyFound = true;
+                            cout << "Enemy robot found at (" << nx << ", " << ny << ") with symbol: " << other->getrobotSymbol() << "\n";
+                            outfile << "Enemy robot found at (" << nx << ", " << ny << ") with symbol: " << other->getrobotSymbol() << "\n";
+                            break;
+                        }
+                    }
+                } else {
+                    cout << "(" << nx << ", " << ny << ") is out of battlefield bounds.\n";
+                    outfile << "(" << nx << ", " << ny << ") is out of battlefield bounds.\n";
+                }
+            }
+        }
+    }
+
+    void think(int col, int row) override {
+        int x = abs(getPosX() - col);
+        int y = abs(getPosY() - row);
+        
+        // Decision to use scout ability
+        if (scoutUses > 0 && rand() % 100 < 30) { // 30% chance to use scout when available
+            see(col, row, col, row); // Passing col,row as x,y to trigger scout mode
+            return;
+        }
+        
+        if (lookCounter == 0) {
+            see(0, 0, col, row);
+            lookCounter++;
+            return;
+        } else {
+            if (x <= 1 && y <= 1) {
+                shoot(col, row);
+                return;
+            } else {
+                move(col, row);
+                return;
+            }
+        }
+    }
+
+    int setdx(int col) {
+        return (rand() % col) - (col / 2);
+    }
+
+    int setdy(int row) {
+        return (rand() % row) - (row / 2);
+    }
+};
+
+class TrackBot : public MovingRobot, public SeeingRobot, public ShootingRobot, public ThinkingRobot {
+private:
+    struct Tracker {
+        Robot* target;
+        bool active;
+    };
+    Tracker trackers[3];  // Array to hold 3 trackers
+    int trackersUsed = 0; // Count of trackers currently in use
+
+public:
+    int enemyX = -1;
+    int enemyY = -1;
+    int lookCounter = 0;
+    bool enemyFound = false;
+    int newpos_x;
+    int newpos_y;
+    int dx;
+    int dy;
+
+    TrackBot(string type, string name, int x, int y) : Robot(type, name, x, y) {
+        shells = 10;
+        // Initialize all trackers as inactive
+        for (int i = 0; i < 3; i++) {
+            trackers[i].target = nullptr;
+            trackers[i].active = false;
+        }
+    }
+
+    void shoot(int x, int y) override {
+        lookCounter--;
+        if (shells > 0) {
+            cout << robotSymbol << " shoots at (" << x << ", " << y << ")" << endl;
+            outfile << robotSymbol << " shoots at (" << x << ", " << y << ")" << endl;
+            shells--;
+            
+            int dx = abs(getPosX() - x);
+            int dy = abs(getPosY() - y);
+            if (dx <= 1 && dy <= 1) {
+                if ((rand() % 100) < 70) {
+                    for (Robot* target : Battlefield::robotsGlobal) {
+                        if (target != this && target->getPosX() == x && target->getPosY() == y) {
+                            cout << "Direct hit! " << target->getrobotSymbol() << " was destroyed!" << endl;
+                            outfile << "Direct hit! " << target->getrobotSymbol() << " was destroyed!" << endl;
+                            
+                            // Remove any trackers on this target
+                            for (int i = 0; i < 3; i++) {
+                                if (trackers[i].active && trackers[i].target == target) {
+                                    trackers[i].active = false;
+                                    trackers[i].target = nullptr;
+                                    trackersUsed--;
+                                    cout << "Tracker on " << target->getrobotSymbol() << " was removed due to destruction." << endl;
+                                    outfile << "Tracker on " << target->getrobotSymbol() << " was removed due to destruction." << endl;
+                                }
+                            }
+                            
+                            target->setLife();
+                            robotKills++;
+                            break;
+                        }
+                    }
+                } else {
+                    cout << "Shot missed the target!" << endl;
+                    outfile << "Shot missed the target!" << endl;
+                }
+            } else {
+                cout << "Target not in adjacent position, shot missed!" << endl;
+                outfile << "Target not in adjacent position, shot missed!" << endl;
+            }
+            
+            if (shells == 0) {
+                cout << robotSymbol << " is out of ammo and self-destructs!" << endl;
+                outfile << robotSymbol << " is out of ammo and self-destructs!" << endl;
+                setLife();
+            }
+        } else {
+            cout << robotSymbol << " has no shells left!" << endl;
+            outfile << robotSymbol << " has no shells left!" << endl;
+        }
+    }
+
+    void move(int col, int row) override {
+        lookCounter--;
+        cout << "Robot " << getrobotSymbol() << " starting at (" << getPosX() << "," << getPosY() << ")" << endl;
+        outfile << "Robot " << getrobotSymbol() << " starting at (" << getPosX() << "," << getPosY() << ")" << endl;
+        
+        // Check if we have any active trackers
+        bool hasTrackedTarget = false;
+        for (int i = 0; i < 3; i++) {
+            if (trackers[i].active && !trackers[i].target->isDead) {
+                enemyX = trackers[i].target->getPosX();
+                enemyY = trackers[i].target->getPosY();
+                hasTrackedTarget = true;
+                cout << robotSymbol << " is tracking " << trackers[i].target->getrobotSymbol() 
+                     << " at (" << enemyX << "," << enemyY << ")" << endl;
+                outfile << robotSymbol << " is tracking " << trackers[i].target->getrobotSymbol() 
+                       << " at (" << enemyX << "," << enemyY << ")" << endl;
+                break;
+            }
+        }
+        
+        if(hasTrackedTarget) {
+            dx = (enemyX > getPosX()) ? 1 : (enemyX < getPosX()) ? -1 : 0;
+            dy = (enemyY > getPosY()) ? 1 : (enemyY < getPosY()) ? -1 : 0;
+            cout << robotSymbol << " moves towards tracked enemy robot at (" << enemyX << "," << enemyY << ")" << endl;
+            outfile << robotSymbol << " moves towards tracked enemy robot at (" << enemyX << "," << enemyY << ")" << endl;
+        } else if(enemyFound) {
+            dx = (enemyX > getPosX()) ? 1 : (enemyX < getPosX()) ? -1 : 0;
+            dy = (enemyY > getPosY()) ? 1 : (enemyY < getPosY()) ? -1 : 0;
+            cout << robotSymbol << " moves towards enemy robot at (" << enemyX << "," << enemyY << ")" << endl;
+            outfile << robotSymbol << " moves towards enemy robot at (" << enemyX << "," << enemyY << ")" << endl;
+        } else {
+            dx = setdx(col);
+            dy = setdy(row);
+        }
+        
+        newpos_x = getPosX() + (dx > 0 ? 1 : (dx < 0 ? -1 : 0));
+        newpos_y = getPosY() + (dy > 0 ? 1 : (dy < 0 ? -1 : 0));
+
+        if(newpos_x >= 0 && newpos_x < col && newpos_y >= 0 && newpos_y < row) {
+            bool occupied = false;
+            for (Robot* other : Battlefield::robotsGlobal) { 
+                if (other != this && other->getPosX() == newpos_x && other->getPosY() == newpos_y && other->isDead == false) {
+                    occupied = true;
+                    int adj_dx = abs(getPosX() - newpos_x);
+                    int adj_dy = abs(getPosY() - newpos_y);
+                    if (adj_dx <= 1 && adj_dy <= 1) {
+                        shoot(newpos_x, newpos_y);
+                        return;
+                    }
+                    break;
+                }
+            }
+            
+            if(!occupied) {
+                setPosX(newpos_x);
+                setPosY(newpos_y);
+                cout << "Robot " << getrobotSymbol() << " moved to (" << getPosX() << "," << getPosY() << ")" << endl;
+                outfile << "Robot " << getrobotSymbol() << " moved to (" << getPosX() << "," << getPosY() << ")" << endl;
+            } else {
+                cout << "Robot would not move to already occupied space" << endl;
+                outfile << "Robot would not move to already occupied space" << endl;
+            }
+        }
+    }
+
+    void see(int x, int y, int col, int row) override {
+        int centerX = getPosX() + x;
+        int centerY = getPosY() + y;
+        enemyFound = false;
+        
+        cout << "Robot " << robotSymbol << " is looking around (" << centerX << ", " << centerY << "):\n";
+        outfile << "Robot " << robotSymbol << " is looking around (" << centerX << ", " << centerY << "):\n";
+        
+        for (int dy = -1; dy <= 1; dy++) {
+            for (int dx = -1; dx <= 1; dx++) {
+                int nx = centerX + dx;
+                int ny = centerY + dy;
+    
+                if (nx >= 0 && nx < col && ny >= 0 && ny < row) { 
+                    for (Robot* other : Battlefield::robotsGlobal) { 
+                        if (other != this && other->getPosX() == nx && other->getPosY() == ny && other->isDead == false) {
+                            enemyX = nx;
+                            enemyY = ny;
+                            enemyFound = true;
+                            cout << "Enemy robot found at (" << nx << ", " << ny << ") with symbol: " << other->getrobotSymbol() << "\n";
+                            outfile << "Enemy robot found at (" << nx << ", " << ny << ") with symbol: " << other->getrobotSymbol() << "\n";
+                            
+                            // Try to plant a tracker if we have any left
+                            if (trackersUsed < 3) {
+                                for (int i = 0; i < 3; i++) {
+                                    if (!trackers[i].active) {
+                                        // Check if we're not already tracking this robot
+                                        bool alreadyTracking = false;
+                                        for (int j = 0; j < 3; j++) {
+                                            if (trackers[j].active && trackers[j].target == other) {
+                                                alreadyTracking = true;
+                                                break;
+                                            }
+                                        }
+                                        
+                                        if (!alreadyTracking) {
+                                            trackers[i].target = other;
+                                            trackers[i].active = true;
+                                            trackersUsed++;
+                                            cout << "Tracker planted on " << other->getrobotSymbol() << " at (" 
+                                                 << nx << "," << ny << ")" << endl;
+                                            outfile << "Tracker planted on " << other->getrobotSymbol() << " at (" 
+                                                   << nx << "," << ny << ")" << endl;
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                            break;
+                        }
+                    }
+                } else {
+                    cout << "(" << nx << ", " << ny << ") is out of battlefield bounds.\n";
+                    outfile << "(" << nx << ", " << ny << ") is out of battlefield bounds.\n";
+                }
+            }
+        }
+        
+        // Display current tracking status
+        if (trackersUsed > 0) {
+            cout << robotSymbol << " is currently tracking:" << endl;
+            outfile << robotSymbol << " is currently tracking:" << endl;
+            for (int i = 0; i < 3; i++) {
+                if (trackers[i].active && !trackers[i].target->isDead) {
+                    cout << "  " << trackers[i].target->getrobotSymbol() << " at (" 
+                         << trackers[i].target->getPosX() << "," << trackers[i].target->getPosY() << ")" << endl;
+                    outfile << "  " << trackers[i].target->getrobotSymbol() << " at (" 
+                           << trackers[i].target->getPosX() << "," << trackers[i].target->getPosY() << ")" << endl;
+                }
+            }
+        }
+    }
+
+    void think(int col, int row) override {
+        int x = abs(getPosX() - col);
+        int y = abs(getPosY() - row);
+        if (lookCounter == 0) {
+            see(0, 0, col, row);
+            lookCounter++;
+            return;
+        } else {
+            if (x <= 1 && y <= 1) {
+                shoot(col, row);
+                return;
+            } else {
+                move(col, row);
+                return;
+            }
+        }
+    }
+
+    int setdx(int col) {
+        return (rand() % col) - (col / 2);
+    }
+
+    int setdy(int row) {
+        return (rand() % row) - (row / 2);
+    }
+};
+
+class DroneBot : public MovingRobot, public SeeingRobot, public ShootingRobot, public ThinkingRobot {
+private:
+    int droneUses = 2; // only 2 scans per match
+
+public:
+    DroneBot(string type, string name, int x, int y) : Robot(type, name, x, y) {
+        shells = 10;
+    }
+
+    void shoot(int x, int y) override {
+        lookCounter--;
+        if (shells > 0) {
+            cout << robotSymbol << " shoots at (" << x << ", " << y << ")" << endl;
+            outfile << robotSymbol << " shoots at (" << x << ", " << y << ")" << endl;
+            shells--;
+            
+            int dx = abs(getPosX() - x);
+            int dy = abs(getPosY() - y);
+            if (dx <= 1 && dy <= 1) {
+                if ((rand() % 100) < 70) {
+                    for (Robot* target : Battlefield::robotsGlobal) {
+                        if (target != this && target->getPosX() == x && target->getPosY() == y) {
+                            cout << "Direct hit! " << target->getrobotSymbol() << " was destroyed!" << endl;
+                            outfile << "Direct hit! " << target->getrobotSymbol() << " was destroyed!" << endl;
+                            target->setLife();
+                            robotKills++;
+                            break;
+                        }
+                    }
+                } else {
+                    cout << "Shot missed the target!" << endl;
+                    outfile << "Shot missed the target!" << endl;
+                }
+            } else {
+                cout << "Target not in adjacent position, shot missed!" << endl;
+                outfile << "Target not in adjacent position, shot missed!" << endl;
+            }
+            
+            if (shells == 0) {
+                cout << robotSymbol << " is out of ammo and self-destructs!" << endl;
+                outfile << robotSymbol << " is out of ammo and self-destructs!" << endl;
+                setLife();
+            }
+        } else {
+            cout << robotSymbol << " has no shells left!" << endl;
+            outfile << robotSymbol << " has no shells left!" << endl;
+        }
+    }
+
+    void move(int col, int row) override {
+        lookCounter--;
+        cout << "Robot " << getrobotSymbol() << " starting at (" << getPosX() << "," << getPosY() << ")" << endl;
+        outfile << "Robot " << getrobotSymbol() << " starting at (" << getPosX() << "," << getPosY() << ")" << endl;
+        
+        if(enemyFound) {
+            dx = (enemyX > getPosX()) ? 1 : (enemyX < getPosX()) ? -1 : 0;
+            dy = (enemyY > getPosY()) ? 1 : (enemyY < getPosY()) ? -1 : 0;
+            cout << robotSymbol << " moves towards enemy robot at (" << enemyX << "," << enemyY << ")" << endl;
+            outfile << robotSymbol << " moves towards enemy robot at (" << enemyX << "," << enemyY << ")" << endl;
+        } else {
+            dx = setdx(col);
+            dy = setdy(row);
+        }
+        
+        newpos_x = getPosX() + (dx > 0 ? 1 : (dx < 0 ? -1 : 0));
+        newpos_y = getPosY() + (dy > 0 ? 1 : (dy < 0 ? -1 : 0));
+
+        if(newpos_x >= 0 && newpos_x < col && newpos_y >= 0 && newpos_y < row) {
+            bool occupied = false;
+            for (Robot* other : Battlefield::robotsGlobal) { 
+                if (other != this && other->getPosX() == newpos_x && other->getPosY() == newpos_y && other->isDead == false) {
+                    occupied = true;
+                    int adj_dx = abs(getPosX() - newpos_x);
+                    int adj_dy = abs(getPosY() - newpos_y);
+                    if (adj_dx <= 1 && adj_dy <= 1) {
+                        shoot(newpos_x, newpos_y);
+                        return;
+                    }
+                    break;
+                }
+            }
+            
+            if(!occupied) {
+                setPosX(newpos_x);
+                setPosY(newpos_y);
+                cout << "Robot " << getrobotSymbol() << " moved to (" << getPosX() << "," << getPosY() << ")" << endl;
+                outfile << "Robot " << getrobotSymbol() << " moved to (" << getPosX() << "," << getPosY() << ")" << endl;
+            } else {
+                cout << "Robot would not move to already occupied space" << endl;
+                outfile << "Robot would not move to already occupied space" << endl;
+            }
+        }
+    }
+
+    void see(int x, int y, int col, int row) override {
+    if (droneUses > 0 && (x != 0 || y != 0)) {
+        cout << robotSymbol << " deploys a drone to (" << x << "," << y << ") to scout a 9x9 area:\n";
+        outfile << robotSymbol << " deploys a drone to (" << x << "," << y << ") to scout a 9x9 area:\n";
+        droneUses--;
+
+        for (int dy = -4; dy <= 4; dy++) {
+            for (int dx = -4; dx <= 4; dx++) {
+                int nx = x + dx;
+                int ny = y + dy;
+                if (nx >= 0 && nx < col && ny >= 0 && ny < row) {
+                    bool found = false;
+                    for (Robot* r : Battlefield::robotsGlobal) {
+                        if (r != this && r->getPosX() == nx && r->getPosY() == ny && !r->isDead) {
+                            cout << "  Drone sees enemy at (" << nx << ", " << ny << ") symbol: " << r->getrobotSymbol() << "\n";
+                            outfile << "  Drone sees enemy at (" << nx << ", " << ny << ") symbol: " << r->getrobotSymbol() << "\n";
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (!found) {
+                        cout << "  (" << nx << ", " << ny << ") is empty.\n";
+                        outfile << "  (" << nx << ", " << ny << ") is empty.\n";
+                    }
+                }
+            }
+        }
+    } else {
+        cout << robotSymbol << " has no drones left or default scanning.\n";
+        outfile << robotSymbol << " has no drones left or default scanning.\n";
+    }
+}
+
+
+    void think(int col,int row) override{
+            int x = abs(getPosX() - col);
+            int y = abs(getPosY() - row);
+
+            if (droneUses > 0 && rand() % 100 < 20) {
+                int tx = rand() % col;
+                int ty = rand() % row;
+                see(tx, ty, col, row);
+                return;
+            }   
+            if (lookCounter == 0){
+                see(0,0,col,row);
+                lookCounter ++;
+                return;
+            }
+            else{
+                if (x <= 1 && y <= 1){
+                    shoot(col,row);
+                    return;
+                }
+                else{
+                    move(col,row);
+                    return;
+                }
+            }
+        }
+};
+
+
 void Battlefield::readFile(ifstream &file) {
     file.open("config.txt");
     string line;
@@ -1097,6 +1704,15 @@ void Battlefield::readFile(ifstream &file) {
             }
             else if (robotTypeList[i] == "StealBot") {
                 addRobot(new StealBot(robotTypeList[i], robotNameList[i], tempNumX, tempNumY));
+            }
+            else if (robotTypeList[i] == "ScoutBot") {
+                addRobot(new ScoutBot(robotTypeList[i], robotNameList[i], tempNumX, tempNumY));
+            }
+            else if (robotTypeList[i] == "TrackBot") {
+                addRobot(new TrackBot(robotTypeList[i], robotNameList[i], tempNumX, tempNumY));
+            }
+            else if (robotTypeList[i] == "DroneBot") {
+                addRobot(new DroneBot(robotTypeList[i], robotNameList[i], tempNumX, tempNumY));
             }
         }
     }

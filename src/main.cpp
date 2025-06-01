@@ -98,6 +98,11 @@ class Battlefield{
         
 };
 
+ostream& operator<<(ostream& out, Robot *bot){
+    out << "(" << bot->getPosX() << "," << bot->getPosY() << ")" << endl;
+    return out;
+}
+
 vector<Robot*> Battlefield::robotsGlobal;
 vector<Robot*> Battlefield::robotsQueueGlobal;
 
@@ -148,7 +153,6 @@ void Battlefield::beginSimulation() {
     for (int i = 0; i < steps;) {
         for (auto it = robotsGlobal.begin(); it != robotsGlobal.end();){
             Robot* robot = *it;
-            outfile << "Robot: " << robot->getrobotSymbol() << " " << robot->robotLife << endl;
             if (robotsGlobal.size() == 1){
                 cout << "One Robot remains" << endl;
                 outfile << "One Robot remains" << endl;
@@ -179,8 +183,8 @@ void Battlefield::beginSimulation() {
                 respawnBot->setPosX(x);respawnBot->setPosY(y);
                 respawnBot->isDead = false;
                 robotsGlobal.push_back(respawnBot);
-                cout << respawnBot->getrobotSymbol() << " has rejoined the fray at (" << respawnBot->getPosX() << "," << respawnBot->getPosY() << ")" << endl;
-                outfile << respawnBot->getrobotSymbol() << " has rejoined the fray at (" << respawnBot->getPosX() << "," << respawnBot->getPosY() << ")" << endl;
+                cout << respawnBot->getrobotSymbol() << " has rejoined the fray at " << respawnBot;
+                outfile << respawnBot->getrobotSymbol() << " has rejoined the fray at " << respawnBot;
             }
             else{
                 cout << respawnBot->getrobotSymbol() << " has been permanently damaged." << endl;
@@ -674,7 +678,6 @@ class HideBot : public MovingRobot, public SeeingRobot, public ShootingRobot, pu
             lookCounter --;
             cout << "Robot " << getrobotSymbol()<<" starting at ("<<getPosX()<<","<<getPosY()<<")"<<endl;
             outfile << "Robot " << getrobotSymbol()<<" starting at ("<<getPosX()<<","<<getPosY()<<")"<<endl;
-            // outfile << hidecount << endl;
             if (hidecount>0){
                 ishiding=true;
                 hidecount--;
@@ -2046,10 +2049,8 @@ public:
             outfile << robotSymbol << " is currently tracking:" << endl;
             for (int i = 0; i < 3; i++) {
                 if (trackers[i].active && !trackers[i].target->isDead) {
-                    cout << "  " << trackers[i].target->getrobotSymbol() << " at (" 
-                         << trackers[i].target->getPosX() << "," << trackers[i].target->getPosY() << ")" << endl;
-                    outfile << "  " << trackers[i].target->getrobotSymbol() << " at (" 
-                           << trackers[i].target->getPosX() << "," << trackers[i].target->getPosY() << ")" << endl;
+                    cout << "  " << trackers[i].target->getrobotSymbol() << " at " << trackers[i].target; 
+                    outfile << "  " << trackers[i].target->getrobotSymbol() << " at " << trackers[i].target;
                 }
             }
         }

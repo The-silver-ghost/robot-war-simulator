@@ -849,10 +849,18 @@ class JumpBot : public MovingRobot, public SeeingRobot, public ShootingRobot, pu
             if (jumpcount>0){
                 cout << "The jumpBot will activate now" << endl;
                 outfile << "The jumpBot will activate now" << endl;
-                newpos_x=setdx(col);
-                newpos_y = setdy(row);
+                newpos_x=rand() % col;
+                newpos_y = rand() % row;
+                if(newpos_x >=0 && newpos_x<col && newpos_y>=0 && newpos_y<row){
                 setPosX(newpos_x);
                 setPosY(newpos_y);
+                cout << "jumped to" << newpos_x <<","<<newpos_y<<endl;
+                outfile << "jumped to " << newpos_x << "," << newpos_y << endl;
+                 }
+                 else{
+                    cout << "could not jump beyond boundary" << endl;
+                    outfile << "could not jump beyond boundary" << endl;
+                 }
                 jumpcount--;
                 cout << "The remaining jumps are " << jumpcount << endl;
                 outfile << "The remaining jumps are " << jumpcount<< endl;

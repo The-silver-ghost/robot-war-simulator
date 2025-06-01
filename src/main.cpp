@@ -212,6 +212,7 @@ class MovingRobot : virtual public Robot{
     int newpos_y;
     int dx;
     int dy;
+    bool ishiding= false;
     virtual void move(int,int) = 0;
     int setdx(int col){
        
@@ -255,7 +256,7 @@ class GenericRobot : public MovingRobot, public SeeingRobot, public ShootingRobo
                     // 70% chance to kill
                     if ((rand() % 100) < 70) {
                         for (Robot* target : Battlefield::robotsGlobal) {
-                            if (target != this && target->getPosX() == x && target->getPosY() == y) {
+                            if (target != this && target->getPosX() == x && target->getPosY() == y && ishiding==false) {
                                 cout << "Direct hit! " << target->getrobotSymbol() << " was destroyed!" << endl;
                                 outfile << "Direct hit! " << target->getrobotSymbol() << " was destroyed!" << endl;
                                 target->setLife();
@@ -358,8 +359,8 @@ class GenericRobot : public MovingRobot, public SeeingRobot, public ShootingRobo
             cout << "Robot " << robotSymbol << " is looking around (" << centerX << ", " << centerY << "):\n";
             outfile << "Robot " << robotSymbol << " is looking around (" << centerX << ", " << centerY << "):\n";
             
-            for (int dy = -1; dy <= 1; dy++) {
-                for (int dx = -1; dx <= 1; dx++) {
+            for (int dy = -3; dy <= 3; dy++) {
+                for (int dx = -3; dx <= 3; dx++) {
                     int nx = centerX + dx;
                     int ny = centerY + dy;
         
@@ -388,6 +389,8 @@ class HideBot : public MovingRobot, public SeeingRobot, public ShootingRobot, pu
         HideBot(string type,string name, int x, int y) : Robot(type,name,x,y){
             shells=10;
         }
+        int hidecount=3;
+        
 
         void shoot(int x, int y) override{
             lookCounter --;
@@ -403,11 +406,20 @@ class HideBot : public MovingRobot, public SeeingRobot, public ShootingRobot, pu
                     // 70% chance to kill
                     if ((rand() % 100) < 70) {
                         for (Robot* target : Battlefield::robotsGlobal) {
-                            if (target != this && target->getPosX() == x && target->getPosY() == y) {
+                            
+                            if (target != this && target->getPosX() == x && target->getPosY() == y && ishiding==false) {
+                                HideBot* hidebot = dynamic_cast<HideBot*>(target);
+                                if(hidebot && hidebot->ishiding){
+                                    cout << "Robot" << hidebot->getrobotSymbol() << "is hiding and safe" << endl;
+                                    outfile << "Robot" << hidebot->getrobotSymbol() << "is hiding and safe" << endl;
+
+                                }
+                                else{
                                 cout << "Direct hit! " << target->getrobotSymbol() << " was destroyed!" << endl;
                                 outfile << "Direct hit! " << target->getrobotSymbol() << " was destroyed!" << endl;
                                 target->setLife();
                                 robotKills++;
+                            }
                                 break;
                             }
                         }
@@ -455,7 +467,13 @@ class HideBot : public MovingRobot, public SeeingRobot, public ShootingRobot, pu
             lookCounter --;
             cout << "Robot " << getrobotSymbol()<<" starting at ("<<getPosX()<<","<<getPosY()<<")"<<endl;
             outfile << "Robot " << getrobotSymbol()<<" starting at ("<<getPosX()<<","<<getPosY()<<")"<<endl;
-            
+            if (hidecount>0){
+                ishiding=true;
+                hidecount--;
+                cout<< "Robot" << getrobotSymbol() << "is hiding" << endl;
+                cout << "Remaining hidecount" << hidecount << endl;
+            }
+            else{
             if(enemyFound){
                 dx = (enemyX > getPosX()) ? 1 : (enemyX < getPosX()) ? -1 : 0;
                 dy = (enemyY > getPosY()) ? 1 : (enemyY < getPosY()) ? -1 : 0;
@@ -496,7 +514,10 @@ class HideBot : public MovingRobot, public SeeingRobot, public ShootingRobot, pu
                     outfile<< "Robot would not move to already occupied space" << endl;
                 }
             }
+
         }
+        }
+        
         
         void see(int x, int y,int col,int row) override {
             int centerX = getPosX() + x;
@@ -801,8 +822,8 @@ public:
         cout << "Robot " << robotSymbol << " is looking around (" << centerX << ", " << centerY << "):\n";
         outfile << "Robot " << robotSymbol << " is looking around (" << centerX << ", " << centerY << "):\n";
         
-        for (int dy = -1; dy <= 1; dy++) {
-            for (int dx = -1; dx <= 1; dx++) {
+        for (int dy = -3; dy <= 3; dy++) {
+            for (int dx = -3; dx <= 3; dx++) {
                 int nx = centerX + dx;
                 int ny = centerY + dy;
     
@@ -2026,6 +2047,9 @@ void Battlefield::readFile(ifstream &file) {
             }
             else if (robotTypeList[i] == "JumpBot") {
                 addRobot(new JumpBot(robotTypeList[i], robotNameList[i], tempNumX, tempNumY));
+            }
+            else if (robotTypeList[i] == "HideBot") {
+                addRobot(new HideBot(robotTypeList[i], robotNameList[i], tempNumX, tempNumY));
             }
         }
     }

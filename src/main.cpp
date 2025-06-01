@@ -153,6 +153,7 @@ void Battlefield::beginSimulation() {
     for (int i = 0; i < steps;) {
         for (auto it = robotsGlobal.begin(); it != robotsGlobal.end();){
             Robot* robot = *it;
+            outfile << robot->upgradeCounterShoot << endl;
             if (robotsGlobal.size() == 1){
                 cout << "One Robot remains" << endl;
                 outfile << "One Robot remains" << endl;
@@ -936,7 +937,7 @@ class JumpBot : public MovingRobot, public SeeingRobot, public ShootingRobot, pu
 
 class LongShotBot : public MovingRobot, public SeeingRobot, public ShootingRobot, public ThinkingRobot {
     public:
-        LongShotBot(string type, string name, int x, int y) : Robot(type, name, x, y) {}
+        LongShotBot(string type, string name, int x, int y) : Robot(type, name, x, y) {upgradeCounterShoot++;}
 
         void shoot(int x, int y) override {
             lookCounter--;
@@ -1089,6 +1090,7 @@ public:
     SemiAutoBot(string type, string name, int x, int y) : Robot(type, name, x, y) {
         shells = 10; // Standard number of shells
         robotLife = 3;
+        upgradeCounterShoot++;
     }
 
     void shoot(int x, int y) override {
@@ -1256,6 +1258,7 @@ class ThirtyShotBot : public MovingRobot, public SeeingRobot, public ShootingRob
 public:
     ThirtyShotBot(string type, string name, int x, int y) : Robot(type, name, x, y) {
         shells = 30; // Increased ammo capacity (30 instead of 10)
+        upgradeCounterShoot++;
     }
 
     void shoot(int x, int y) override {
@@ -1420,6 +1423,7 @@ public:
     StealBot(string type, string name, int x, int y) : Robot(type, name, x, y) {
         shells = 10;  // Starting ammo
         maxShells = 30;  // Maximum ammo capacity
+        upgradeCounterShoot++;
     }
 
     void shoot(int x, int y) override {

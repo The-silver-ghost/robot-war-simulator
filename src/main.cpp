@@ -49,8 +49,9 @@ class Robot{
         string robotType;
         
     public:
-        int robotLife = 3;
+        int robotLife = 3,upgradeCounterShoot = 0,upgradeCounterSee = 0,upgradeCounterMove = 0, killNeeded = 1;
         bool isDead = false;
+        bool ishiding= false;
 
         virtual void see(int,int,int,int) = 0;
         virtual void move(int, int) = 0;
@@ -61,8 +62,11 @@ class Robot{
         void setPosX(int x){robotPosX=x;}
         void setPosY(int y){robotPosY=y;}
         void setRobotName(string n){robotName=n;}
+        string getRobotType(){return robotType;}
+        string getRobotName(){return robotName;}
         void setRobotSymbol(char c){robotSymbol=c;}
         void setKills(int k){robotKills=k;}
+        int getKills(){return robotKills;}
         void setLife(){isDead = true;robotLife --;}
         int getPosX(){return robotPosX;}
         int getPosY(){return robotPosY;}
@@ -77,15 +81,17 @@ Robot::Robot(string type,string name,int xCoord,int yCoord){
 class Battlefield{
     private:
         int row,col,steps,numberOfRobots;
+        void displayBattlefield();
     public:
         int getRow(){return row;}
         int getCol(){return col;}
         int getSteps(){return steps;}
-        void displayBattlefield();
+        // void displayBattlefield();
         void addRobot(Robot* robot);
         void beginSimulation();
-        void removeRobot(Robot* robot);
+        // void removeRobot(Robot* robot);
         void readFile(ifstream &file);
+        void upgradeBot(Robot*);
         ~Battlefield();
 
         static vector<Robot*> robotsGlobal;
@@ -115,15 +121,15 @@ Battlefield::~Battlefield(){
     }
 }
 
-void Battlefield::removeRobot(Robot* robot) {
-    for (auto it = robotsGlobal.begin(); it != robotsGlobal.end(); ) {
-        if (*it == robot) {
-            it = robotsGlobal.erase(it);
-        } else {
-            ++it;
-        }
-    }
-}
+// void Battlefield::removeRobot(Robot* robot) {
+//     for (auto it = robotsGlobal.begin(); it != robotsGlobal.end(); ) {
+//         if (*it == robot) {
+//             it = robotsGlobal.erase(it);
+//         } else {
+//             ++it;
+//         }
+//     }
+// }
 
 void Battlefield::displayBattlefield(){
     for (int i=0;i<row;i++){
@@ -212,7 +218,6 @@ class MovingRobot : virtual public Robot{
     int newpos_y;
     int dx;
     int dy;
-    bool ishiding= false;
     virtual void move(int,int) = 0;
     int setdx(int col){
        
@@ -384,9 +389,9 @@ class GenericRobot : public MovingRobot, public SeeingRobot, public ShootingRobo
         }
 };
 
-class AdvancedMove : public MovingRobot, public SeeingRobot, public ShootingRobot, public ThinkingRobot{
+class AdvanceMoveBot : public MovingRobot, public SeeingRobot, public ShootingRobot, public ThinkingRobot{
     public:
-    AdvancedMove(string type,string name, int x, int y) : Robot(type,name,x,y){}
+    AdvanceMoveBot(string type,string name, int x, int y) : Robot(type,name,x,y){}
         int advancedmovecount=2;
         void shoot(int x, int y) override{
             lookCounter --;
@@ -500,6 +505,14 @@ class AdvancedMove : public MovingRobot, public SeeingRobot, public ShootingRobo
             }
              cout << "The advancedmovecount" << advancedmovecount  << endl;
             }
+            else{
+                if (enemyFound){
+                    dx = (enemyX > getPosX()) ? 1 : (enemyX < getPosX()) ? -1 : 0;
+                    dy = (enemyY > getPosY()) ? 1 : (enemyY < getPosY()) ? -1 : 0;
+                    cout << getrobotSymbol() << " moves towards enemy robot at (" << enemyX << "," << enemyY << ")" << endl;
+                    outfile << getrobotSymbol() << " moves towards enemy robot at (" << enemyX << "," << enemyY << ")" << endl;
+                }
+            }
             
             if(enemyFound){
                 dx = (enemyX > getPosX()) ? 1 : (enemyX < getPosX()) ? -1 : 0;
@@ -600,11 +613,11 @@ class HideBot : public MovingRobot, public SeeingRobot, public ShootingRobot, pu
                     if ((rand() % 100) < 70) {
                         for (Robot* target : Battlefield::robotsGlobal) {
                             
-                            if (target != this && target->getPosX() == x && target->getPosY() == y && ishiding==false) {
-                                HideBot* hidebot = dynamic_cast<HideBot*>(target);
-                                if(hidebot && hidebot->ishiding){
-                                    cout << "Robot" << hidebot->getrobotSymbol() << "is hiding and safe" << endl;
-                                    outfile << "Robot" << hidebot->getrobotSymbol() << "is hiding and safe" << endl;
+                            if (target != this && target->getPosX() == x && target->getPosY() == y && target->ishiding==false) {
+                                // HideBot* hidebot = dynamic_cast<HideBot*>(target);
+                                if(ishiding == true){
+                                    cout << "Robot" << getrobotSymbol() << "is hiding and safe" << endl;
+                                    outfile << "Robot" << getrobotSymbol() << "is hiding and safe" << endl;
 
                                 }
                                 else{
@@ -2253,11 +2266,68 @@ void Battlefield::readFile(ifstream &file) {
             else if (robotTypeList[i] == "HideBot") {
                 addRobot(new HideBot(robotTypeList[i], robotNameList[i], tempNumX, tempNumY));
             }
-            else if (robotTypeList[i] == "AdvancedMoveBot") {
-                addRobot(new HideBot(robotTypeList[i], robotNameList[i], tempNumX, tempNumY));
+            else if (robotTypeList[i] == "AdvanceMoveBot") {
+                addRobot(new AdvanceMoveBot(robotTypeList[i], robotNameList[i], tempNumX, tempNumY));
             }
             
         }
+    }
+}
+
+void Battlefield::upgradeBot(Robot *bot){
+    string name = bot->getRobotName();
+    int x = bot->getPosX();int y = bot->getPosY();
+    if (bot->killNeeded == 4){
+        robotsGlobal.push_back(bot);
+        return;
+    }
+    if(bot->getKills() == bot->killNeeded){
+        bot->killNeeded ++;
+        if (bot->upgradeCounterShoot == 0){
+            bot->upgradeCounterShoot++;
+            int randomUpgrade = rand() % 4;
+            if (randomUpgrade == 0){
+                bot = new LongShotBot("LongShotBot",name,x,y);
+            }
+            else if (randomUpgrade == 1){
+                bot = new SemiAutoBot("SemiAutoBot",name,x,y);
+            }
+            else if (randomUpgrade == 2){
+                bot = new ThirtyShotBot("ThirtyShotBot",name,x,y);
+            }
+            else if (randomUpgrade == 3){
+            bot = new StealBot("StealBot",name,x,y);
+            }
+        }
+        else if (bot->upgradeCounterSee == 0){
+            bot->upgradeCounterSee++;
+            int randomUpgrade = rand() % 3;
+            if (randomUpgrade == 0){
+                bot = new ScoutBot("ScoutBot",name,x,y);
+            }
+            else if (randomUpgrade == 1){
+                bot = new TrackBot("TrackBot",name,x,y);
+            }
+            else if (randomUpgrade == 2){
+                bot = new DroneBot("DroneBot",name,x,y);
+            }
+        }
+        else if (bot->upgradeCounterMove == 0){
+            bot->upgradeCounterMove++;
+            int randomUpgrade = rand() % 3;
+            if (randomUpgrade == 0){
+                bot = new HideBot("HideBot",name,x,y);
+            }
+            else if (randomUpgrade == 1){
+                bot = new JumpBot("JumpBot",name,x,y);
+            }
+            else if (randomUpgrade == 2){
+                bot = new AdvanceMoveBot("AdvanceMoveBot",name,x,y);
+            }
+        }
+        cout << bot->getrobotSymbol() << " has upgraded to " << bot->getRobotType() << endl;
+        outfile << bot->getrobotSymbol() << " has upgraded to " << bot->getRobotType() << endl;
+        robotsGlobal.push_back(bot);
     }
 }
 

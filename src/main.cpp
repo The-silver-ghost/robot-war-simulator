@@ -1104,7 +1104,7 @@ public:
             if (dx <= 1 && dy <= 1) {
                 bool targetDestroyed = false;
                 for (int i = 0; i < 3; i++) {
-                    if ((rand() % 100) < 10) { 
+                    if ((rand() % 100) < 70) { 
                         for (Robot* target : Battlefield::robotsGlobal) {
                             if (target != this && target->getPosX() == x && target->getPosY() == y) {
                                 if (target->ishiding) {

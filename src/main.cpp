@@ -854,8 +854,8 @@ class JumpBot : public MovingRobot, public SeeingRobot, public ShootingRobot, pu
                 setPosX(newpos_x);
                 setPosY(newpos_y);
                 jumpcount--;
-                cout << "The remaining jumps are" << jumpcount << endl;
-                outfile << "The remaining jumps are" << jumpcount<< endl;
+                cout << "The remaining jumps are " << jumpcount << endl;
+                outfile << "The remaining jumps are " << jumpcount<< endl;
             }
            else{
             if(enemyFound){

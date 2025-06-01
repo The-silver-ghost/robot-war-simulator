@@ -86,10 +86,8 @@ class Battlefield{
         int getRow(){return row;}
         int getCol(){return col;}
         int getSteps(){return steps;}
-        // void displayBattlefield();
         void addRobot(Robot* robot);
         void beginSimulation();
-        // void removeRobot(Robot* robot);
         void readFile(ifstream &file);
         void upgradeBot(Robot*);
         ~Battlefield();
@@ -120,16 +118,6 @@ Battlefield::~Battlefield(){
         it++;
     }
 }
-
-// void Battlefield::removeRobot(Robot* robot) {
-//     for (auto it = robotsGlobal.begin(); it != robotsGlobal.end(); ) {
-//         if (*it == robot) {
-//             it = robotsGlobal.erase(it);
-//         } else {
-//             ++it;
-//         }
-//     }
-// }
 
 void Battlefield::displayBattlefield(){
     for (int i=0;i<row;i++){
@@ -165,13 +153,16 @@ void Battlefield::beginSimulation() {
                 return;
             }
             if (robot->isDead == false){
-                if (i == steps) {
-                    cout << "Max Steps Reached" << endl;
-                    outfile << "Max Steps Reached" << endl;
-                    return;
-                } else {
-                    robot->think(col,row);
+            cout << "Step: " << i+1 << endl;
+            outfile << "Step: " << i+1 << endl;
+                robot->think(col,row);
+                if (robot->getKills() > 0 && robot->getKills() < 4){
+                    upgradeBot(robot);
+                    it = robotsGlobal.erase(it);
                 }
+                displayBattlefield();
+                i++;
+                it++;
             }
             else {
                 robotsQueueGlobal.push_back(robot);
@@ -193,14 +184,12 @@ void Battlefield::beginSimulation() {
                 cout << respawnBot->getrobotSymbol() << " has been permanently damaged." << endl;
                 outfile << respawnBot->getrobotSymbol() << " has been permanently damaged." << endl;
                 respawnBot = nullptr;
-                // delete respawnBot;
                 }
             }
-            displayBattlefield();
-            i++;
-            it++;
         }
     }
+    cout << "Max Steps Reached" << endl;
+    outfile << "Max Steps Reached" << endl;
 }
 
 class ShootingRobot : virtual public Robot {
@@ -391,7 +380,9 @@ class GenericRobot : public MovingRobot, public SeeingRobot, public ShootingRobo
 
 class AdvanceMoveBot : public MovingRobot, public SeeingRobot, public ShootingRobot, public ThinkingRobot{
     public:
-    AdvanceMoveBot(string type,string name, int x, int y) : Robot(type,name,x,y){}
+    AdvanceMoveBot(string type,string name, int x, int y) : Robot(type,name,x,y){
+        robotLife = 3;upgradeCounterShoot++;upgradeCounterSee++;upgradeCounterMove++;
+    }
         int advancedmovecount=2;
         void shoot(int x, int y) override{
             lookCounter --;
@@ -594,6 +585,7 @@ class HideBot : public MovingRobot, public SeeingRobot, public ShootingRobot, pu
     public:
         HideBot(string type,string name, int x, int y) : Robot(type,name,x,y){
             shells=10;
+            robotLife = 3;upgradeCounterShoot++;upgradeCounterSee++;upgradeCounterMove++;
         }
         int hidecount=3;
         
@@ -762,6 +754,7 @@ class JumpBot : public MovingRobot, public SeeingRobot, public ShootingRobot, pu
     public:
         JumpBot(string type,string name, int x, int y) : Robot(type,name,x,y){
             shells=10;
+            robotLife = 3;upgradeCounterShoot++;upgradeCounterSee++;upgradeCounterMove++;
         }
 
         int jumpcount = 3;
@@ -933,6 +926,8 @@ public:
 
     LongShotBot(string type, string name, int x, int y) : Robot(type, name, x, y) {
         shells = 10; 
+        robotLife = 3;
+        upgradeCounterShoot++;
     }
 
     void shoot(int x, int y) override {
@@ -1092,6 +1087,7 @@ public:
 
     SemiAutoBot(string type, string name, int x, int y) : Robot(type, name, x, y) {
         shells = 10; // Standard number of shells
+        robotLife = 3;upgradeCounterShoot++;
     }
 
     void shoot(int x, int y) override {
@@ -1260,6 +1256,7 @@ public:
 
     ThirtyShotBot(string type, string name, int x, int y) : Robot(type, name, x, y) {
         shells = 30; // 30 shells instead of 10
+        robotLife = 3;upgradeCounterShoot++;
     }
 
     void shoot(int x, int y) override {
@@ -1420,6 +1417,7 @@ public:
 
     StealBot(string type, string name, int x, int y) : Robot(type, name, x, y) {
         shells = 10;
+        robotLife = 3;upgradeCounterShoot++;
     }
 
     void shoot(int x, int y) override {
@@ -1594,6 +1592,7 @@ public:
 
     ScoutBot(string type, string name, int x, int y) : Robot(type, name, x, y) {
         shells = 10;
+        robotLife = 3;upgradeCounterShoot++;upgradeCounterSee++;
     }
 
     void shoot(int x, int y) override {
@@ -1806,6 +1805,7 @@ public:
 
     TrackBot(string type, string name, int x, int y) : Robot(type, name, x, y) {
         shells = 10;
+        robotLife = 3;upgradeCounterShoot++;upgradeCounterSee++;
         // Initialize all trackers as inactive
         for (int i = 0; i < 3; i++) {
             trackers[i].target = nullptr;
@@ -2046,6 +2046,7 @@ public:
     
     DroneBot(string type, string name, int x, int y) : Robot(type, name, x, y) {
         shells = 10;
+        robotLife = 3;upgradeCounterShoot++;upgradeCounterSee++;
     }
 
     void shoot(int x, int y) override {
@@ -2284,7 +2285,7 @@ void Battlefield::upgradeBot(Robot *bot){
     if(bot->getKills() == bot->killNeeded){
         bot->killNeeded ++;
         if (bot->upgradeCounterShoot == 0){
-            bot->upgradeCounterShoot++;
+            // bot->upgradeCounterShoot++;
             int randomUpgrade = rand() % 4;
             if (randomUpgrade == 0){
                 bot = new LongShotBot("LongShotBot",name,x,y);
@@ -2300,7 +2301,7 @@ void Battlefield::upgradeBot(Robot *bot){
             }
         }
         else if (bot->upgradeCounterSee == 0){
-            bot->upgradeCounterSee++;
+            // bot->upgradeCounterSee++;
             int randomUpgrade = rand() % 3;
             if (randomUpgrade == 0){
                 bot = new ScoutBot("ScoutBot",name,x,y);
@@ -2313,7 +2314,7 @@ void Battlefield::upgradeBot(Robot *bot){
             }
         }
         else if (bot->upgradeCounterMove == 0){
-            bot->upgradeCounterMove++;
+            // bot->upgradeCounterMove++;
             int randomUpgrade = rand() % 3;
             if (randomUpgrade == 0){
                 bot = new HideBot("HideBot",name,x,y);

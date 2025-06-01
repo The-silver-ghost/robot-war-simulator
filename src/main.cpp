@@ -148,6 +148,7 @@ void Battlefield::beginSimulation() {
     for (int i = 0; i < steps;) {
         for (auto it = robotsGlobal.begin(); it != robotsGlobal.end();){
             Robot* robot = *it;
+            outfile << "Robot: " << robot->getrobotSymbol() << " " << robot->robotLife << endl;
             if (robotsGlobal.size() == 1){
                 cout << "One Robot remains" << endl;
                 outfile << "One Robot remains" << endl;
@@ -158,8 +159,8 @@ void Battlefield::beginSimulation() {
             outfile << "Step: " << i+1 << endl;
                 robot->think(col,row);
                 if (robot->getKills() > 0 && robot->getKills() < 4){
-                    upgradeBot(robot);
                     it = robotsGlobal.erase(it);
+                    upgradeBot(robot);
                 }
                 displayBattlefield();
                 i++;

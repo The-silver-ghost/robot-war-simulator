@@ -849,8 +849,8 @@ class JumpBot : public MovingRobot, public SeeingRobot, public ShootingRobot, pu
             if (jumpcount>0){
                 cout << "The jumpBot will activate now" << endl;
                 outfile << "The jumpBot will activate now" << endl;
-                newpos_x=rand() % col;
-                newpos_y = rand() % row;
+                newpos_x=setdx(col);
+                newpos_y = setdy(row);
                 setPosX(newpos_x);
                 setPosY(newpos_y);
                 jumpcount--;

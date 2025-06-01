@@ -153,7 +153,6 @@ void Battlefield::beginSimulation() {
     for (int i = 0; i < steps;) {
         for (auto it = robotsGlobal.begin(); it != robotsGlobal.end();){
             Robot* robot = *it;
-            outfile << robot->upgradeCounterShoot << endl;
             if (robotsGlobal.size() == 1){
                 cout << "One Robot remains" << endl;
                 outfile << "One Robot remains" << endl;
